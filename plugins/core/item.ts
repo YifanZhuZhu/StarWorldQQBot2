@@ -18,6 +18,7 @@ export interface NBT {
 }
 
 export interface PlayerConfig {
+    lastSign: string;
     inventory?: ItemStackInterface[];
 }
 
@@ -82,6 +83,23 @@ export class Player {
 
     public setConfig <K extends keyof PlayerConfig> (newConfig: ((prevState: Readonly<PlayerConfig>, props: Readonly<PlayerConfig>) => (Pick<PlayerConfig, K> | PlayerConfig | null)) | (Pick<PlayerConfig, K> | PlayerConfig | null), replace = false) {
         fs.writeFileSync(this.configFilePath, JSON.stringify(replace ? newConfig : _.merge(this.config, newConfig)));
+    }
+
+    public sign (event: Bot.GroupCommandEvent, args: Bot.ParseResult) {
+        let date = new Date;
+        let now = `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`;
+        let config = this.getConfig("lastSign", null);
+        if (config == now) return false;
+        else {
+            let result = [];
+            this.setConfig({lastSign: now});
+            for (let i of signItems) {
+                let item = {id: i.id, nbt: i.nbt, count: _.random(i.min, i.max)};
+                this.giveItem(item);
+                result.push(item);
+            }
+            return result;
+        }
     }
 
     public giveItem (item: ItemStackInterface) {
@@ -244,6 +262,7 @@ export class CopperCoinItem extends Item {
 Item.register(UnknownItem).register(CopperCoinItem);
 
 export const players: Player[] = [];
+export const signItems: {id: string, min: number, max: number, nbt: NBT}[] = [{id: "swbot:copper_coin", min: 1, max: 20, nbt: {}}];
 
 for (let i of Player.loadAllConfigs()) {
     Bot.Bot.client.logger.info(`加载玩家配置文件 ${i.configFilePath}`);

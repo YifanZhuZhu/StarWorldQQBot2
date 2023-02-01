@@ -60,7 +60,7 @@ export async function onGive (event: Bot.GroupCommandEvent, ...args: Bot.ParseRe
     let player = BotItem.Player.of(user.user_id);
     try {
         player.give(itemStack, event, args);
-        await event.reply([Bot.MessageSegment.At(event.sender.userId), ` 给予 ${user.nickname} ${user.user_id} ${BotItem.Item.match(itemStack.id).getName(new BotItem.ItemStack(itemStack), player, event, args)} (${itemStack.id}) * ${itemStack.count}`]);
+        await event.reply([Bot.MessageSegment.At(event.sender.userId), ` 给予 ${user.nickname} ${user.user_id} ${BotItem.Item.match(itemStack.id).getName(new BotItem.ItemStack(itemStack), player)} (${itemStack.id}) * ${itemStack.count}`]);
     } catch {
         await event.reply([Bot.MessageSegment.At(event.sender.userId), " 执行失败"]);
     }
@@ -94,8 +94,8 @@ export async function getInventory (event: Bot.GroupCommandEvent, target: number
     ];
     for (let num of Object.keys(inventory)) {
         let i = inventory[Number(num)];
-        let name = BotItem.Item.match(i.id).getName(new BotItem.ItemStack(i), player, event, args);
-        let tooltip = BotItem.Item.match(i.id).getTooltip(new BotItem.ItemStack(i), player, event, args);
+        let name = BotItem.Item.match(i.id).getName(new BotItem.ItemStack(i), player);
+        let tooltip = BotItem.Item.match(i.id).getTooltip(new BotItem.ItemStack(i), player);
         if (tooltip.trim().length > 0) tooltip += "\n\n";
         fakeForward.push(
             {
@@ -139,7 +139,7 @@ export async function getTake (event: Bot.GroupCommandEvent, id: number, item: s
     let player = BotItem.Player.of(id);
     if (player.take(event, args, stack.id, stack.count, stack.nbt)) {
         let itemStack: BotItem.ItemStackInterface = typeof stack.nbt === "undefined" ? {...stack, nbt: {}} : stack as any;
-        await event.reply([Bot.MessageSegment.At(event.sender.userId), ` 丢弃成功 ${BotItem.Item.match(stack.id).getName(new BotItem.ItemStack(itemStack), player, event, args)} (${stack.id}) * ${stack.count}`]);
+        await event.reply([Bot.MessageSegment.At(event.sender.userId), ` 丢弃成功 ${BotItem.Item.match(stack.id).getName(new BotItem.ItemStack(itemStack), player)} (${stack.id}) * ${stack.count}`]);
     } else {
         await event.reply([Bot.MessageSegment.At(event.sender.userId), " 此物品无法丢弃"]);
     }
