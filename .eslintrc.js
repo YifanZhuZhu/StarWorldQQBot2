@@ -1,11 +1,13 @@
 module.exports = {
     env: {
         es2022: true,
-        jquery: true
+        jquery: true,
+        node: true
     },
     globals: {
         JQueryStatic: true,
-        JQuery: true
+        JQuery: true,
+        NodeJS: true
     },
     extends: ["alloy", "alloy/typescript"],
     overrides: [],

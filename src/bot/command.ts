@@ -6,6 +6,8 @@ import * as Bot from "../index";
 
 import config from "../config";
 
+import _ from "lodash";
+
 export type Awaitable<T> = T | Promise<T>;
 
 export type CommandExecute =
@@ -27,11 +29,11 @@ export interface ArgumentStruct<V, T = string> {
 export interface ArgumentToken <T> extends ArgumentStruct<Token<T>> {
     type: "Token",
 }
-export interface ArgumentSpecial extends ArgumentStruct<Bot.Element> {
+export interface ArgumentSpecial <T> extends ArgumentStruct<T> {
     type: "Special",
 }
 
-export type ArgumentType = ArgumentToken<string> | ArgumentSpecial;
+export type ArgumentType = ArgumentToken<string> | ArgumentSpecial<Bot.Element>;
 
 export type ParseResult = ArgumentType[];
 
@@ -94,7 +96,7 @@ export namespace Command {
 
     export const commandPrefix = {
         Normal: "!",
-        Super: "$",
+        Super: "&",
         Debug: "%",
     };
 
@@ -164,7 +166,11 @@ export async function onHelp (event: Bot.GroupCommandEvent): Promise<boolean> {
     let rawArgs = event.trimmedArgs;
     if (rawArgs.length <= 0) {
         result += `帮助 —— ${Bot.config.name}\n`;
-        for (let i of Command.allCommands) {
+        let superCommands = _.cloneDeep(Command.allCommands).filter(i => i.name.startsWith(Command.commandPrefix.Super));
+        let debugCommands = _.cloneDeep(Command.allCommands).filter(i => i.name.startsWith(Command.commandPrefix.Debug));
+        let normalCommands = _.cloneDeep(Command.allCommands).filter(i => i.name.startsWith(Command.commandPrefix.Normal));
+        let commands = [...superCommands, ...debugCommands, ...normalCommands];
+        for (let i of commands) {
             if (i.showInHelp) result += `\n${i.name}: ${i.description}`;
         }
         result += `\n\n[${Command.commandPrefix.Normal}] 普通指令 | [${Command.commandPrefix.Debug}] 调试指令 | [${Command.commandPrefix.Super}] 管理员指令`;

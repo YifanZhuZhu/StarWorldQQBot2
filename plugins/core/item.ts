@@ -17,7 +17,7 @@ export interface NBT {
     [index: string]: JSONType
 }
 
-export interface UserConfig {
+export interface PlayerConfig {
     inventory?: ItemStackInterface[];
 }
 
@@ -31,7 +31,7 @@ export type JSONType =
     | undefined;
 
 
-class Player {
+export class Player {
 
     public readonly id: number;
 
@@ -44,12 +44,21 @@ class Player {
         }
     }
 
+    public static of (id: number) {
+        let player = players.find(i => i.id == Number(id));
+        if (!player) player = new Player(id);
+        return player;
+    }
+
     public configFilePath: string;
 
     constructor (id: number) {
         this.id = Number(id);
         this.configFilePath = path.join(playerPath, String(Number(id)) + ".json");
         this.removeEmptyItems();
+        if (!players.find(i => i.id == Number(id))) {
+            players.push(this);
+        }
     }
 
     public get config () {
@@ -71,16 +80,17 @@ class Player {
         return result;
     }
 
-    public setConfig <K extends keyof UserConfig> (newConfig: ((prevState: Readonly<UserConfig>, props: Readonly<UserConfig>) => (Pick<UserConfig, K> | UserConfig | null)) | (Pick<UserConfig, K> | UserConfig | null), replace = false) {
-        fs.writeFileSync(this.configFilePath, JSON.stringify(replace ? newConfig : _.merge(newConfig, this.config)));
+    public setConfig <K extends keyof PlayerConfig> (newConfig: ((prevState: Readonly<PlayerConfig>, props: Readonly<PlayerConfig>) => (Pick<PlayerConfig, K> | PlayerConfig | null)) | (Pick<PlayerConfig, K> | PlayerConfig | null), replace = false) {
+        fs.writeFileSync(this.configFilePath, JSON.stringify(replace ? newConfig : _.merge(this.config, newConfig)));
     }
 
-    public give (item: ItemStackInterface) {
+    public giveItem (item: ItemStackInterface) {
         let given = false;
         for (let i of Object.keys(this.getConfig("inventory", []))) {
             let itemStack: ItemStackInterface = _.get(this.config, ["inventory", i]);
             if (itemStack.id == item.id && _.isEqual(itemStack.nbt, item.nbt)) {
                 itemStack.count += item.count;
+                itemStack.count = Math.trunc(itemStack.count);
                 given = true;
                 let config = this.config;
                 _.set(config, ["inventory", i], itemStack);
@@ -93,12 +103,34 @@ class Player {
             config.inventory.push(item);
             this.setConfig(config, true);
         }
-        Item.match(item.id).onGive(new ItemStack(item), this);
-        this.removeEmptyItems();
         return this;
     }
 
-    public take (id: string, count: number, nbt?: NBT) {
+    public give (item: ItemStack | ItemStackInterface, event: Bot.GroupCommandEvent, commandArgs: Bot.ParseResult) {
+        let newItem = item instanceof ItemStack ? item.stack : item;
+        let give = false;
+        if (Item.match(newItem.id).onGive(new ItemStack(newItem), this, event, commandArgs)) {
+            this.giveItem(newItem);
+            give = true;
+        }
+        this.removeEmptyItems();
+        return give;
+    }
+
+    public take (event: Bot.GroupCommandEvent, commandArgs: Bot.ParseResult, id: string, count: number, nbt?: NBT) {
+        let give = { value: true };
+        this.takeItem(
+            id, count, nbt,
+            (itemStack, player) => {
+                give.value = Item.match(id).onTake(new ItemStack(itemStack), player, event, commandArgs);
+                return give.value;
+            }
+        );
+        return give.value;
+    }
+
+    public takeItem (id: string, countNumber: number, nbt?: NBT, callback?: (itemStack: ItemStackInterface, player: Player) => boolean) {
+        let count = Math.trunc(countNumber);
         let currentCount = count;
         for (let i of Object.keys(this.getConfig("inventory", []))) {
             let itemStack: ItemStackInterface = _.get(this.config, ["inventory", i]);
@@ -113,13 +145,13 @@ class Player {
                     currentCount -= itemStack.count;
                 }
                 let config = this.config;
-                Item.match(id).onGive(new ItemStack(itemStack), this);
+                let result = true;
+                if (callback) result = callback(itemStack, this);
                 _.set(config, ["inventory", i], itemStack);
-                this.setConfig(config, true);
+                if (result) this.setConfig(config, true);
                 break;
             }
         }
-
         this.removeEmptyItems();
         return this;
     }
@@ -155,53 +187,63 @@ export class ItemStack {
 export class Item {
 
     private static readonly all: {[index: string]: Item} = {};
-    public static readonly id: string;
+    public static readonly id: string | undefined | null;
 
     // eslint-disable-next-line no-undef
-    private _inventoryInterval: NodeJS.Timer | undefined;
+    private inventoryInterval: NodeJS.Timer | undefined;
 
     public static register (item: typeof Item, id: string | null = null) {
         // eslint-disable-next-line new-cap
-        this.all[id ? id : item.id] = new item;
+        if (!id && typeof item.id === "string") this.all[item.id] = new item;
+        // eslint-disable-next-line new-cap
+        else if (id) this.all[id] = new item;
         return Item;
+    }
+
+    public static getAll () {
+        let result: typeof Item.all = {};
+        for (let i of Object.keys(Item.all)) {
+            result[i] = Item.all[i];
+        }
+        return result;
     }
 
     public static match (id: string) {
         return id in Item.all ? Item.all[id] : new UnknownItem;
     }
 
-    public onUse (stack: ItemStack, player: Player) {}
-    public onTake (stack: ItemStack, player: Player) {}
-    public onGive (stack: ItemStack, player: Player) {}
+    public getName (stack: ItemStack, player: Player, event?: Bot.GroupCommandEvent, commandArgs?: Bot.ParseResult) { return "物品"; }
+    public getTooltip (stack: ItemStack, player: Player, event?: Bot.GroupCommandEvent, commandArgs?: Bot.ParseResult) { return ""; }
+
+    public onUse (stack: ItemStack, player: Player, event: Bot.GroupCommandEvent, commandArgs: Bot.ParseResult) {}
+    public onTake (stack: ItemStack, player: Player, event: Bot.GroupCommandEvent, commandArgs: Bot.ParseResult): boolean { return true; }
+    public onGive (stack: ItemStack, player: Player, event: Bot.GroupCommandEvent, commandArgs: Bot.ParseResult): boolean { return true; }
     public onInventoryTick (stack: ItemStack, player: Player) {}
 
+    public clearInterval (stack: ItemStack, player: Player) { if (this.inventoryInterval) clearInterval(this.inventoryInterval as NodeJS.Timer); }
+    public hasInterval (stack: ItemStack, player: Player) { return !!this.inventoryInterval; }
     public setInterval (stack: ItemStack, player: Player) {
         let that = this;
-        if (!this._inventoryInterval) {
-            this._inventoryInterval = setInterval(() => that.onInventoryTick(stack, player));
-        }
+        if (!this.inventoryInterval) this.inventoryInterval = setInterval(() => that.onInventoryTick(stack, player));
     }
-
-    public clearInterval (stack: ItemStack, player: Player) {
-        // eslint-disable-next-line no-undef
-        if (this._inventoryInterval) clearInterval(this._inventoryInterval as NodeJS.Timer);
-    }
-
-    public hasInterval (stack: ItemStack, player: Player) {
-        return !!this._inventoryInterval;
-    }
-
 }
 
 export class UnknownItem extends Item {
     public static id = "swbot:unknown";
+
+    public getName(stack: ItemStack, player: Player): string { return "未知"; }
 }
 
-export class CoinItem extends Item {
-    public static id = "swbot:coin";
+export class CopperCoinItem extends Item {
+    public static id = "swbot:copper_coin";
+    public getName (stack: ItemStack, player: Player): string { return "铜币"; }
+    public getTooltip (stack: ItemStack, player: Player, event?: Bot.GroupCommandEvent, commandArgs?: Bot.ParseResult): string { return "基础货币"; }
+    public onTake (stack: ItemStack, player: Player, event: Bot.GroupCommandEvent, commandArgs: Bot.ParseResult): boolean { return false; }
 }
 
-Item.register(UnknownItem).register(CoinItem);
+Item.register(UnknownItem).register(CopperCoinItem);
+
+export const players: Player[] = [];
 
 for (let i of Player.loadAllConfigs()) {
     Bot.Bot.client.logger.info(`加载玩家配置文件 ${i.configFilePath}`);

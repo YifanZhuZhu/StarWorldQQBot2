@@ -8,7 +8,7 @@ import fs from "fs";
 export interface StarWorldBotConfig {
     uin: number;
     password?: string;
-    superusers: number[];
+    superUsers: number[];
     platform: BotAdapter.Platform;
     name: string;
     pluginPathList: string[];
