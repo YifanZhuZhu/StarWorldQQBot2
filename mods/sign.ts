@@ -1,5 +1,5 @@
 import * as Bot from "../src";
-import * as BotItem from "../plugins/core/item";
+import * as BotItem from "../plugins/core";
 
 
 Bot.Command.register(

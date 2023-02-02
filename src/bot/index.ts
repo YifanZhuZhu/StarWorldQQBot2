@@ -5,6 +5,14 @@ import * as BotAdapter from "oicq";
 import path from "path";
 import fs from "fs";
 
+export function sleep (timeout: number): Promise<NodeJS.Timeout> {
+    return new Promise(
+        (resolve) => {
+            let timer: NodeJS.Timeout = setTimeout(() => resolve(timer), timeout);
+        }
+    );
+}
+
 export interface StarWorldBotConfig {
     uin: number;
     password?: string;
@@ -13,6 +21,7 @@ export interface StarWorldBotConfig {
     name: string;
     pluginPathList: string[];
     help: boolean;
+    defaultId: string;
 }
 
 export class StarWorldBot {
@@ -70,17 +79,17 @@ export class StarWorldBot {
 
     public async onBeforeLogin () {
         this.client.logger.info("登录中");
-        await this.loadPlugins();
+        this.loadPlugins();
     }
 
-    public async loadPlugins () {
+    public loadPlugins () {
         for (let i of this.config.pluginPathList) {
-            await this.loadPluginsFromDirectory(i);
+            this.loadPluginsFromDirectory(i);
         }
 
     }
 
-    public async loadPluginsFromDirectory(dirname: string): Promise<void> {
+    public loadPluginsFromDirectory(dirname: string): void {
         this.client.logger.info("正在加载插件");
         let plugins = fs.readdirSync(path.resolve(__dirname, dirname));
         for (let _path of plugins) {
@@ -111,7 +120,7 @@ export class StarWorldBot {
     public async onCommandGroup (event: BotAdapter.GroupMessageEvent) {
         for await (let i of Command.execute(event)) {
             this.client.logger.info(
-                `用户 ${event.sender.nickname} (${event.sender.user_id}) 执行了指令 ${i.result ? "" : "(未生效) "}${i.command.name} 参数 ${i.event.trimmedArgs}`
+                `用户 ${event.sender.nickname} (${event.sender.user_id}) 执行了指令 ${i.result ? "" : "(未生效) "}${i.command.name} ${i.event.trimmedArgs}`
             );
         }
         return;

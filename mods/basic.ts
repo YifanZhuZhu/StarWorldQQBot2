@@ -1,5 +1,5 @@
-import * as BotItem from "./item";
-import * as Bot from '../../src';
+import * as BotItem from "../plugins/core";
+import * as Bot from '../src';
 
 import json5 from "json5";
 
@@ -38,9 +38,9 @@ Bot.Command.register(
 export async function onGive (event: Bot.GroupCommandEvent, ...args: Bot.ParseResult): Promise<boolean> {
     if (Bot.config.superUsers.indexOf(event.sender.userId) == -1) return false;
     let id = json5.parse((args[1].value as Bot.Token<"String">).value);
-    let count = json5.parse((args[2].value as Bot.Token<"Numeric">).value);
+    let count = Number((args[2].value as Bot.Token<"Numeric">).value);
     let nbt = json5.parse(json5.parse((args[3].value as Bot.Token<"String">).value));
-    let item = JSON.stringify({count, nbt, id});
+    let rawItemStack = {count, nbt, id};
     let qq = parseAt(args[0] as any);
     if (isNaN(Number(qq))) {
         return false;
@@ -50,8 +50,7 @@ export async function onGive (event: Bot.GroupCommandEvent, ...args: Bot.ParseRe
         await event.reply([Bot.MessageSegment.At(event.sender.userId), " 执行失败：不是一个用户"]);
         return true;
     }
-    let rawItemStack = json5.parse(item);
-    if (typeof rawItemStack.count !== "number" || typeof rawItemStack.id !== "string" || typeof rawItemStack.nbt !== "object") {
+    if (Number.isNaN(rawItemStack.count) || typeof rawItemStack.id !== "string" || typeof rawItemStack.nbt !== "object") {
         await event.reply([Bot.MessageSegment.At(event.sender.userId), " 执行失败：无效物品"]);
         return true;
     }
@@ -60,7 +59,7 @@ export async function onGive (event: Bot.GroupCommandEvent, ...args: Bot.ParseRe
     let player = BotItem.Player.of(user.user_id);
     try {
         player.give(itemStack, event, args);
-        await event.reply([Bot.MessageSegment.At(event.sender.userId), ` 给予 ${user.nickname} ${user.user_id} ${BotItem.Item.match(itemStack.id).getName(new BotItem.ItemStack(itemStack), player)} (${itemStack.id}) * ${itemStack.count}`]);
+        await event.reply([Bot.MessageSegment.At(event.sender.userId), ` 给予 ${user.nickname} ${user.user_id} ${BotItem.Item.match(itemStack.id).toString(new BotItem.ItemStack(itemStack), player)}`]);
     } catch {
         await event.reply([Bot.MessageSegment.At(event.sender.userId), " 执行失败"]);
     }
@@ -94,12 +93,11 @@ export async function getInventory (event: Bot.GroupCommandEvent, target: number
     ];
     for (let num of Object.keys(inventory)) {
         let i = inventory[Number(num)];
-        let name = BotItem.Item.match(i.id).getName(new BotItem.ItemStack(i), player);
         let tooltip = BotItem.Item.match(i.id).getTooltip(new BotItem.ItemStack(i), player);
         if (tooltip.trim().length > 0) tooltip += "\n\n";
         fakeForward.push(
             {
-                message: `[${num}] ${name} ${i.id} * ${i.count} \n\n${tooltip} ${JSON.stringify(i.nbt)}`,
+                message: [Bot.MessageSegment.Image(BotItem.Item.match(i.id).getIcon(new BotItem.ItemStack(i), player)), `\n[${num}] ${BotItem.Item.match(i.id).toString(new BotItem.ItemStack(i), player)} \n\n${tooltip}数据标签: ${JSON.stringify(i.nbt, null, 2)}`],
                 user_id: Bot.config.uin,
             }
         );
@@ -119,17 +117,16 @@ Bot.Command.register(
 
 export async function onTake (event: Bot.GroupCommandEvent, ...args: Bot.ParseResult) {
     let id = json5.parse((args[0].value as Bot.Token<"String">).value);
-    let count = json5.parse((args[1].value as Bot.Token<"Numeric">).value);
+    let count = Number((args[1].value as Bot.Token<"Numeric">).value);
     let nbt;
     try {
         nbt = json5.parse(json5.parse((args[2].value as Bot.Token<"String">).value));
     } catch {}
     let result = {count, nbt, id};
-    return getTake(event, event.sender.userId, JSON.stringify(result), args);
+    return getTake(event, event.sender.userId, result, args);
 }
 
-export async function getTake (event: Bot.GroupCommandEvent, id: number, item: string, args: Bot.ParseResult): Promise<boolean> {
-    let rawItemStack = json5.parse(item);
+export async function getTake (event: Bot.GroupCommandEvent, id: number, rawItemStack: any, args: Bot.ParseResult): Promise<boolean> {
     let stack: {count: number, id: string, nbt: undefined | {[index: string]: BotItem.JSONType}};
     if (typeof rawItemStack.count !== "number" || typeof rawItemStack.id !== "string" || ["object", "undefined"].indexOf(typeof rawItemStack.nbt) == -1) {
         await event.reply([Bot.MessageSegment.At(event.sender.userId), " 执行失败：无效物品"]);
@@ -139,7 +136,7 @@ export async function getTake (event: Bot.GroupCommandEvent, id: number, item: s
     let player = BotItem.Player.of(id);
     if (player.take(event, args, stack.id, stack.count, stack.nbt)) {
         let itemStack: BotItem.ItemStackInterface = typeof stack.nbt === "undefined" ? {...stack, nbt: {}} : stack as any;
-        await event.reply([Bot.MessageSegment.At(event.sender.userId), ` 丢弃成功 ${BotItem.Item.match(stack.id).getName(new BotItem.ItemStack(itemStack), player)} (${stack.id}) * ${stack.count}`]);
+        await event.reply([Bot.MessageSegment.At(event.sender.userId), ` 丢弃成功 ${BotItem.Item.match(stack.id).toString(new BotItem.ItemStack(itemStack), player)}`]);
     } else {
         await event.reply([Bot.MessageSegment.At(event.sender.userId), " 此物品无法丢弃"]);
     }
@@ -158,11 +155,11 @@ Bot.Command.register(
 export async function onSuperTake (event: Bot.GroupCommandEvent, ...args: Bot.ParseResult): Promise<boolean> {
     if (Bot.config.superUsers.indexOf(event.sender.userId) == -1) return false;
     let id = json5.parse((args[1].value as Bot.Token<"String">).value);
-    let count = json5.parse((args[2].value as Bot.Token<"Numeric">).value);
+    let count = Number((args[2].value as Bot.Token<"Numeric">).value);
     let nbt;
     try {
         nbt = json5.parse(json5.parse((args[3].value as Bot.Token<"String">).value));
     } catch {}
     let result = {count, nbt, id};
-    return getTake(event, parseAt(args[0] as any), JSON.stringify(result), args);
+    return getTake(event, parseAt(args[0] as any), result, args);
 }
