@@ -1,5 +1,5 @@
 import * as oicq from "oicq";
-import { Bot } from "../index";
+import * as Bot from "../index";
 
 export namespace MessageSegment {
 
@@ -22,7 +22,6 @@ export namespace MessageSegment {
     export const Poke = oicq.segment.poke;
 
     export const CQCode = ("fromCqcode" in oicq.segment) ? oicq.segment["fromCqcode"] : (str: string): oicq.MessageElem[] => [];
-
 }
 
 export namespace BotMessage {
@@ -32,10 +31,10 @@ export namespace BotMessage {
         for (let i of context) {
             let name: string;
             try {
-                name = ( await Bot.client.getGroupMemberInfo(groupId, i.user_id) ).nickname;
+                name = ( await Bot.Bot.client.getGroupMemberInfo(groupId, i.user_id) ).nickname;
             } catch {
                 try {
-                    name = ( await Bot.client.pickUser(i.user_id).getSimpleInfo() ).nickname;
+                    name = ( await Bot.Bot.client.pickUser(i.user_id).getSimpleInfo() ).nickname;
                 } catch {
                     name = String(i.user_id);
                 }
@@ -47,7 +46,7 @@ export namespace BotMessage {
                 }
             );
         }
-        return Bot.client.makeForwardMsg(result);
+        return Bot.Bot.client.makeForwardMsg(result);
     }
 
     export interface FakeGroupForwardMessage {
@@ -58,7 +57,7 @@ export namespace BotMessage {
     }
 
     export function sendMessageSync (groupId: number, ...messages: ( string | oicq.MessageElem )[]) {
-        Bot.client.sendGroupMsg(groupId, messages).then();
+        Bot.Bot.client.sendGroupMsg(groupId, messages).then();
     }
 
 }

@@ -1,4 +1,4 @@
-import { Adapter } from "../index";
+import { Adapter, MessageSegment } from "../index";
 
 import { ParseResult } from "../bot";
 
@@ -30,7 +30,16 @@ export class GroupCommandEvent {
 
     // 群号
     public readonly groupId: number;
+    // 群名称
+    public readonly groupName: string;
+    // 群
+    public readonly group: Adapter.Group;
+
+    // 发送者
     public readonly sender: CommandSender;
+    // 发送者（成员）
+    public readonly member: Adapter.Member;
+
 
     constructor (event: Adapter.GroupMessageEvent, commandName: string, commandArgs: ParseResult) {
         this.commandName = commandName;
@@ -54,10 +63,22 @@ export class GroupCommandEvent {
             title: event.sender.title,
         };
         this.groupId = event.group_id;
+        this.groupName = event.group_name;
+        this.group = event.group;
+        this.member = event.member;
     }
 
     async reply (content: Adapter.Sendable, quote?: boolean) {
         await this.rawEvent.reply(content, quote);
+    }
+
+    async replyAt (content: Adapter.Sendable, quote?: boolean) {
+        if (Array.isArray(content)) await this.rawEvent.reply([MessageSegment.At(this.sender.userId), ...content], quote);
+        else await this.rawEvent.reply([MessageSegment.At(this.sender.userId), content], quote);
+    }
+
+    async reCall () {
+        return await this.rawEvent.recall();
     }
 
 }

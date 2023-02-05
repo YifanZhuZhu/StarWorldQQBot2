@@ -101,6 +101,25 @@ export namespace Command {
     };
 
     export const allCommands: Command[] = [];
+    export const allMessageHandlers: CommandExecute[] = [];
+
+    export async function * executeMessage (event: oicq.GroupMessageEvent) {
+        for (let i of Command.allMessageHandlers) {
+            let result = Command.parse(event);
+            try {
+                let commandEvent = new api.GroupCommandEvent(event, i.name, result);
+                let executeReturn = await i(commandEvent, ...result);
+                yield {command: i, result: executeReturn, event: commandEvent};
+            } catch (e) {
+                Bot.Bot.client.logger.error(`消息处理识别 ${i.name}`);
+                Bot.Bot.client.logger.error(e);
+            }
+        }
+    }
+
+    export function onMessage (handler: CommandExecute) {
+        allMessageHandlers.push(handler);
+    }
 
     export async function* execute (event: oicq.GroupMessageEvent) {
         for (let i of Command.allCommands) {

@@ -1,5 +1,5 @@
-import * as BotItem from "../plugins/core";
-import * as Bot from '../src';
+import * as BotItem from "../../plugins/core";
+import * as Bot from '../../src';
 
 import json5 from "json5";
 
@@ -58,7 +58,7 @@ export async function onGive (event: Bot.GroupCommandEvent, ...args: Bot.ParseRe
     let user = await Bot.Bot.client.pickUser(qq).getSimpleInfo();
     let player = BotItem.Player.of(user.user_id);
     try {
-        player.give(itemStack, event, args);
+        player.give(event, args, itemStack);
         await event.reply([Bot.MessageSegment.At(event.sender.userId), ` 给予 ${user.nickname} ${user.user_id} ${BotItem.Item.match(itemStack.id).toString(new BotItem.ItemStack(itemStack), player)}`]);
     } catch {
         await event.reply([Bot.MessageSegment.At(event.sender.userId), " 执行失败"]);
@@ -110,7 +110,7 @@ Bot.Command.register(
     `${Bot.Command.commandPrefix.Normal}丢弃`,
     onTake,
     [
-        `${Bot.Command.commandPrefix.Normal}丢弃 [物品]`
+        `${Bot.Command.commandPrefix.Normal}丢弃 [物品ID] [数量] [?物品NBT]`
     ].join("\n"),
     "丢弃物品"
 );
@@ -147,7 +147,7 @@ Bot.Command.register(
     `${Bot.Command.commandPrefix.Super}丢弃`,
     onSuperTake,
     [
-        `${Bot.Command.commandPrefix.Super}丢弃 [@目标] [物品]`
+        `${Bot.Command.commandPrefix.Super}丢弃 [@目标] [ID] [物品数量] [?物品NBT]`
     ].join("\n"),
     "丢弃玩家物品"
 );
@@ -162,4 +162,66 @@ export async function onSuperTake (event: Bot.GroupCommandEvent, ...args: Bot.Pa
     } catch {}
     let result = {count, nbt, id};
     return getTake(event, parseAt(args[0] as any), result, args);
+}
+
+Bot.Command.register(
+    `${Bot.Command.commandPrefix.Normal}使用`,
+    onUse,
+    [
+        `${Bot.Command.commandPrefix.Normal}使用 [物品ID] [?物品NBT]`
+    ].join("\n"),
+    "使用物品"
+);
+
+export async function onUse (event: Bot.GroupCommandEvent, ...args: Bot.ParseResult): Promise<boolean> {
+    let id = json5.parse((args[0].value as Bot.Token<"String">).value);
+    let nbt;
+    try {
+        nbt = json5.parse(json5.parse((args[1].value as Bot.Token<"String">).value));
+    } catch {}
+    let player = BotItem.Player.of(event.sender.userId);
+    let result = player.use(event, args, id, nbt);
+    if (!result) {
+        await event.replyAt(" 物品无法使用");
+    }
+    return true;
+}
+
+Bot.Command.register(
+    `${Bot.Command.commandPrefix.Normal}个人信息`,
+    onUserInfo,
+    [
+        `${Bot.Command.commandPrefix.Normal}个人信息`
+    ].join("\n"),
+    "查看个人信息"
+);
+
+export async function onUserInfo (event: Bot.GroupCommandEvent, ...args: Bot.ParseResult): Promise<boolean> {
+    return await getUserInfo(event, args, event.sender.userId);
+}
+
+Bot.Command.register(
+    `${Bot.Command.commandPrefix.Super}个人信息`,
+    onSuperUserInfo,
+    [
+        `${Bot.Command.commandPrefix.Super}个人信息`
+    ].join("\n"),
+    "查看玩家个人信息"
+);
+
+export async function onSuperUserInfo (event: Bot.GroupCommandEvent, ...args: Bot.ParseResult): Promise<boolean> {
+    if (Bot.config.superUsers.indexOf(event.sender.userId) == -1) return false;
+    return await getUserInfo(event, args, parseAt(args[0] as any));
+}
+
+export async function getUserInfo (event: Bot.GroupCommandEvent, args: Bot.ParseResult, userId: number): Promise<boolean> {
+    let player = BotItem.Player.of(userId);
+    let user = await Bot.Bot.client.pickUser(userId).getSimpleInfo();
+    await event.replyAt(
+        [
+            `\n名称: ${user.nickname}`,
+            `生命值 (${player.getHealth()} / ${player.getMaxHealth()})：[${("=".repeat(Math.trunc(player.getHealthPercentage() * 10)) + "->" + "-".repeat(10 - Math.trunc((player.getHealthPercentage() * 10)))).trim()}]`
+        ].join("\n")
+    );
+    return true;
 }

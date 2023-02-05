@@ -27,6 +27,7 @@
     "typescript": "^4.9.4"
   },
   "dependencies": {
+    "acorn-typescript": "^1.0.5",
     "adm-zip": "^0.5.10",
     "axios": "^1.2.3",
     "esprima": "^4.0.1",

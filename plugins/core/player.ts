@@ -7,7 +7,9 @@ import _ from "lodash";
 
 export interface PlayerConfig {
     lastSign: number;
-    inventory?: ItemStackInterface[];
+    inventory: ItemStackInterface[];
+    health: number;
+    maxHealth: number;
 }
 
 export class Player {
@@ -101,7 +103,7 @@ export class Player {
         return this;
     }
 
-    public give (item: ItemStack | ItemStackInterface, event: Bot.GroupCommandEvent, commandArgs: Bot.ParseResult) {
+    public give (event: Bot.GroupCommandEvent, commandArgs: Bot.ParseResult, item: ItemStack | ItemStackInterface) {
         let newItem = item instanceof ItemStack ? item.stack : item;
         let give = false;
         if (Item.match(newItem.id).onGive(new ItemStack(newItem), this, event, commandArgs)) {
@@ -152,9 +154,9 @@ export class Player {
                     itemStack.count = itemStack.count - currentCount;
                     currentCount -= itemStack.count;
                 }
-                let config = this.config;
                 let result = true;
                 if (callback) result = callback(itemStack, this);
+                let config = this.config;
                 _.set(config, ["inventory", i], itemStack);
                 if (result) this.setConfig(config, true);
                 break;
@@ -178,6 +180,44 @@ export class Player {
             }
         );
         this.setConfig(config, true);
+    }
+
+    public getHealth () { return Number(this.getConfig("health", this.getMaxHealth()).toFixed(4)); }
+    public getMaxHealth () { return this.getConfig("maxHealth", 40); }
+    public getHealthPercentage () { return Number(this.getConfig("health", 40) / this.getConfig("maxHealth", 40));}
+    public setHealth (health: number) { this.setConfig({health: Number(health)}); this.refreshHealth(); }
+    public setMaxHealth (maxHealth: number) { this.setConfig({maxHealth: Number(maxHealth)}); this.refreshHealth(); }
+
+    public useItem (id: string, nbt?: NBT | undefined) {
+        let config = this.config;
+        for (let i of config.inventory) {
+            if (i.id == id && (nbt ? _.isEqualWith(i.nbt, nbt) : true)) {
+                let result = Item.match(id).onUse(new ItemStack(i), this);
+                this.setConfig(config);
+                return result;
+            }
+        }
+        return false;
+    }
+
+    public use (event: Bot.GroupCommandEvent, args: Bot.ParseResult, id: string, nbt?: NBT | undefined) {
+        let config = this.config;
+        for (let i of config.inventory) {
+            config = this.config;
+            if (i.id == id && (nbt ? _.isEqualWith(i.nbt, nbt) : true)) {
+                let result = Item.match(id).onUse(new ItemStack(i), this, event, args);
+                config = this.config;
+                this.setConfig(config);
+                return result;
+            }
+        }
+        return false;
+    }
+
+    refreshHealth () {
+        if (this.getMaxHealth() < this.getHealth()) this.setHealth(this.getMaxHealth());
+        if (this.getMaxHealth() < 40) this.setMaxHealth(40);
+        if (this.getHealth() < 0) this.setHealth(this.getMaxHealth());
     }
 
 }

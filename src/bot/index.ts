@@ -40,28 +40,23 @@ export class StarWorldBot {
                 platform: this.config.platform,
             }
         );
-        this.client.login(this.config.password).then(this.onBeforeLogin.bind(this));
-        this.client.on(
-            "system.online", this.onLogin.bind(this)
-        ).on(
-            "system.offline", this.onOffline.bind(this)
-        ).on(
-            "message.group", this.onCommandGroup.bind(this)
-        ).on(
-            "system.login.qrcode", this.onQrCodeLogin.bind(this)
-        ).on(
-            "system.login.slider", this.onSliderLogin.bind(this)
+    }
+
+    public async init () {
+        this.loadPlugins();
+        this.client.on("system.online", this.onLogin.bind(this)
+        ).on("system.offline", this.onOffline.bind(this)
+        ).on("message.group", this.onCommandGroup.bind(this)
+        ).on("system.login.qrcode", this.onQrCodeLogin.bind(this)
+        ).on("system.login.slider", this.onSliderLogin.bind(this)
         ).on("system.login.device", this.onDeviceLogin.bind(this));
+        await this.client.login(this.config.password);
+        await this.onBeforeLogin();
     }
 
     public onSliderLogin () {
         let that = this;
-        process.stdin.on(
-            "data", (data: Buffer) => {
-                process.stdin.pause();
-                that.client.submitSlider(data.toString().trim());
-            }
-        );
+        process.stdin.once("data", ticket => that.client.submitSlider(String(ticket).trim()));
     }
 
     public onQrCodeLogin () {
@@ -79,7 +74,6 @@ export class StarWorldBot {
 
     public async onBeforeLogin () {
         this.client.logger.info("登录中");
-        this.loadPlugins();
     }
 
     public loadPlugins () {
@@ -118,6 +112,11 @@ export class StarWorldBot {
     }
 
     public async onCommandGroup (event: BotAdapter.GroupMessageEvent) {
+        for await (let i of Command.executeMessage(event)) {
+            if (i.result) {
+                this.client.logger.info(`用户 ${event.sender.nickname} (${event.sender.user_id}) 触发了消息事件 [${i.command?.name ? i.command?.name : "匿名事件"}] `);
+            }
+        }
         for await (let i of Command.execute(event)) {
             this.client.logger.info(
                 `用户 ${event.sender.nickname} (${event.sender.user_id}) 执行了指令 ${i.result ? "" : "(未生效) "}${i.command.name} ${i.event.trimmedArgs}`

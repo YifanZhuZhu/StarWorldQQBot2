@@ -9,7 +9,7 @@ import * as Bot from "../index";
 
 import { MessageSegment } from "./message";
 
-import puppeteer, {Page} from "puppeteer";
+import puppeteer, { Page } from "puppeteer";
 import axios from "axios";
 
 export type TypeOrPromise <T> = T | Promise<T>;
@@ -51,8 +51,11 @@ export async function unzip (buffer: Buffer): Promise<Buffer> {
 
 export type Encoder = (buffer: Buffer, fromURL: string, targetFile: string) => TypeOrPromise<Buffer>;
 
+
 export const memoryCache: { [index: string]: Buffer } = {};
+export const memoryLocalCache: { [index: string]: Buffer } = {};
 export const cachePath: string = path.resolve(__dirname, "../../data/caches/");
+
 
 export async function cacheStaticFile (url: string, encoder: Encoder = (buffer: Buffer) => buffer, decoder: Encoder = (buffer: Buffer) => buffer, memory = true): Promise<[string, Buffer]> {
     let md5 = generateMD5(url);
@@ -83,4 +86,9 @@ export async function cacheStaticFileGetFilePath (url: string, encoder: Encoder 
 
 export function generateMD5 (content: string): string {
     return crypto.createHash('md5').update(content).digest('hex');
+}
+
+export function cacheLocalFile (path: string): Buffer {
+    if (!(path in memoryLocalCache)) memoryLocalCache[path] = fs.readFileSync(path);
+    return memoryLocalCache[path];
 }
