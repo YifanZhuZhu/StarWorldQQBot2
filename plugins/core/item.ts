@@ -90,7 +90,6 @@ export class Item {
         return `${Item.match(newStack.stack.id).getName(newStack, player, event, commandArgs)} (${newStack.stack.id}) * ${newStack.stack.count}`;
     }
 
-    public getIcon (stack: ItemStack, player: Player, event?: Bot.GroupCommandEvent, commandArgs?: Bot.ParseResult): Buffer { return Bot.cacheLocalFile(path.join(resourcePath, "unknown.png")); }
 }
 
 export class UnknownItem extends Item {
@@ -103,7 +102,6 @@ export class CopperCoinItem extends Item {
     public static id = Identifier("copper_coin");
     public getName (stack: ItemStack, player: Player): string { return "铜币"; }
     public getTooltip (stack: ItemStack, player: Player, event?: Bot.GroupCommandEvent, commandArgs?: Bot.ParseResult): string { return "基础货币"; }
-    public getIcon (stack: ItemStack, player: Player, event?: Bot.GroupCommandEvent, commandArgs?: Bot.ParseResult): Buffer { return Bot.cacheLocalFile(path.join(resourcePath, "copper_coin.png")); }
     public onTake (stack: ItemStack, player: Player, event: Bot.GroupCommandEvent, commandArgs: Bot.ParseResult): boolean { return false; }
 }
 
@@ -111,7 +109,6 @@ export class ExperienceItem extends Item {
     public static id = Identifier("experience");
     public getName (stack: ItemStack, player: Player, event?: Bot.GroupCommandEvent, commandArgs?: Bot.ParseResult): string { return "经验"; }
     public onTake (stack: ItemStack, player: Player, event: Bot.GroupCommandEvent, commandArgs: Bot.ParseResult): boolean { return false; }
-    public getIcon (stack: ItemStack, player: Player, event?: Bot.GroupCommandEvent, commandArgs?: Bot.ParseResult): Buffer { return Bot.cacheLocalFile(path.join(resourcePath, "experience.png")); }
 }
 
 Item.register(UnknownItem).register(CopperCoinItem).register(ExperienceItem);
@@ -121,7 +118,6 @@ export const signItems: {id: string, min: number, max: number, nbt: NBT}[] = [
     {id: CopperCoinItem.id, min: 20, max: 40, nbt: {}},
     {id: ExperienceItem.id, nbt: {}, min: 30, max: 50}
 ];
-export const resourcePath = path.join(Bot.botPath, "resources/core/textures/");
 
 export function Identifier (path: string, namespace?: string) {
     let left = namespace ? namespace : Bot.config.defaultId;

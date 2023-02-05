@@ -97,7 +97,7 @@ export async function getInventory (event: Bot.GroupCommandEvent, target: number
         if (tooltip.trim().length > 0) tooltip += "\n\n";
         fakeForward.push(
             {
-                message: [Bot.MessageSegment.Image(BotItem.Item.match(i.id).getIcon(new BotItem.ItemStack(i), player)), `\n[${num}] ${BotItem.Item.match(i.id).toString(new BotItem.ItemStack(i), player)} \n\n${tooltip}数据标签: ${JSON.stringify(i.nbt, null, 2)}`],
+                message: [`[${num}] ${BotItem.Item.match(i.id).toString(new BotItem.ItemStack(i), player)} \n\n${tooltip}数据标签: ${JSON.stringify(i.nbt, null, 2)}`],
                 user_id: Bot.config.uin,
             }
         );

@@ -1,6 +1,5 @@
 import * as BotItem from "../../plugins/core/index";
 import * as Bot from "../../src";
-import path from "path";
 
 export function Identifier (path: string) {
     return `more_foods:${path}`;
@@ -22,9 +21,6 @@ export class BreadSliceItem extends BotItem.Item {
     }
 
     data = {turntableItems: [{count: 1, nbt: {}}]};
-
-    public getIcon (stack: BotItem.ItemStack, player: BotItem.Player, event?: Bot.GroupCommandEvent, commandArgs?: Bot.ParseResult): Buffer { return Bot.cacheLocalFile(path.join(Bot.botPath, "resources/more_foods/textures/bread_slice.png")); }
-
 
 }
 

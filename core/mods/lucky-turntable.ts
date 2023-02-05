@@ -59,7 +59,6 @@ export async function doTurntable (event: Bot.GroupCommandEvent, ...args: Bot.Pa
         player.give(event, args, result);
         await event.reply(
             [
-                Bot.MessageSegment.Image(BotItem.Item.match(result.id).getIcon(new BotItem.ItemStack(result), player)),
                 Bot.MessageSegment.At(event.sender.userId), ` 指针停在了数字${resultIndex + 1}上，获得了 「 ${BotItem.Item.match(result.id).toString(new BotItem.ItemStack(result), player)} 」 ${(typeof ((result as any).description) != "undefined") ? (result as any).description : ""}`
             ]
         );
@@ -85,7 +84,7 @@ export async function getTurntableItems (event: Bot.GroupCommandEvent, ...args: 
         result.push(
             {
                 user_id: Bot.config.uin,
-                message: [Bot.MessageSegment.Image(itemObject.getIcon(itemStack, player)), `\n`, `[${Number(index) + 1}] ${itemObject.getName(itemStack, player)} (${item.id}) * ${item.count} \n\n${JSON.stringify(item.nbt, null, 2)}`.trim()]
+                message: [`[${Number(index) + 1}] ${itemObject.getName(itemStack, player)} (${item.id}) * ${item.count} \n\n${JSON.stringify(item.nbt, null, 2)}`.trim()]
             }
         );
     }
