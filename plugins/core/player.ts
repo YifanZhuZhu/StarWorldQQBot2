@@ -1,9 +1,12 @@
 import * as Bot from "../../src/index";
 
-import { Item, ItemStack, ItemStackInterface, NBT, playerPath, players, signItems, UnknownItem } from "./item";
+import { Item, ItemStack, ItemStackInterface, NBT, players, signItems, UnknownItem, recipes, Recipe } from "./item";
+
 import fs from "fs";
 import path from "path";
 import _ from "lodash";
+
+export const playerPath = path.join(Bot.botPath, "data/players");
 
 export interface PlayerConfig {
     lastSign: number;
@@ -25,6 +28,14 @@ export class Player {
         }
     }
 
+    /**
+     * 获取玩家对象
+     *
+     * @constructor
+     * @param id - 玩家ID
+     * @returns [Player] 玩家
+     *
+     */
     public static of (id: number) {
         let player = players.find(i => i.id == Number(id));
         if (!player) player = new Player(id);
@@ -33,6 +44,14 @@ export class Player {
 
     public configFilePath: string;
 
+    /**
+     * 生成玩家对象
+     *
+     * @constructor
+     * @param id - 玩家ID
+     * @returns [Player] 玩家
+     *
+     */
     constructor (id: number) {
         this.id = Number(id);
         this.configFilePath = path.join(playerPath, String(Number(id)) + ".json");
@@ -65,6 +84,13 @@ export class Player {
         fs.writeFileSync(this.configFilePath, JSON.stringify(replace ? newConfig : _.merge(this.config, newConfig)));
     }
 
+    /**
+     * 每日签到
+     *
+     * @param event - 群指令事件
+     * @param args - 群指令参数
+     *
+     */
     public sign (event: Bot.GroupCommandEvent, args: Bot.ParseResult) {
         let now = new Date;
         let config = new Date(this.getConfig("lastSign", now.getTime()));
@@ -81,6 +107,13 @@ export class Player {
         }
     }
 
+    /**
+     * 给予物品
+     *
+     * @param item - 物品堆叠
+     * @returns [Boolean] 是否给予成功
+     *
+     */
     public giveItem (item: ItemStackInterface) {
         let given = false;
         for (let i of Object.keys(this.getConfig("inventory", []))) {
@@ -100,9 +133,18 @@ export class Player {
             config.inventory.push(item);
             this.setConfig(config, true);
         }
-        return this;
+        return given;
     }
 
+    /**
+     * 给予物品
+     *
+     * @param event - 群消息事件
+     * @param commandArgs - 指令参数
+     * @param item - 物品堆叠
+     * @returns [Boolean] 是否给予成功
+     *
+     */
     public give (event: Bot.GroupCommandEvent, commandArgs: Bot.ParseResult, item: ItemStack | ItemStackInterface) {
         let newItem = item instanceof ItemStack ? item.stack : item;
         let give = false;
@@ -114,6 +156,14 @@ export class Player {
         return give;
     }
 
+    /**
+     * 获取物品栏中[物品]的数量
+     *
+     * @param id - 物品ID
+     * @param nbt - 物品NBT
+     * @returns - 物品栏中的[物品]数量
+     *
+     */
     public count (id: string, nbt: NBT | undefined = undefined) {
         let inv = this.getConfig<ItemStackInterface[]>("inventory", []);
         let result = 0;
@@ -126,6 +176,18 @@ export class Player {
         return result;
     }
 
+    /**
+     * 丢弃物品
+     *
+     * @param event - 群指令事件
+     * @param commandArgs - 指令参数
+     * @param id - 物品ID
+     * @param count - 丢弃数量
+     * @param nbt - 物品NBT
+     * @param force - 是否强制丢弃
+     * @returns - 是否丢弃成功
+     *
+     */
     public take (event: Bot.GroupCommandEvent, commandArgs: Bot.ParseResult, id: string, count: number, nbt?: NBT, force = false) {
         let give = { value: true };
         this.takeItem(
@@ -139,6 +201,16 @@ export class Player {
         return give.value;
     }
 
+    /**
+     * 丢弃物品
+     *
+     * @param id - 物品ID
+     * @param countNumber - 丢弃数量
+     * @param nbt - 物品NBT
+     * @param callback - 回调函数，在丢弃前触发
+     * @returns - 是否丢弃成功
+     *
+     */
     public takeItem (id: string, countNumber: number, nbt?: NBT, callback?: (itemStack: ItemStackInterface, player: Player) => boolean) {
         let count = Math.trunc(countNumber);
         let currentCount = count;
@@ -166,6 +238,7 @@ export class Player {
         return this;
     }
 
+    // 删除物品栏中的空物品
     public removeEmptyItems(): void {
         let config = this.config;
         if (!config.inventory) config.inventory = [];
@@ -181,18 +254,31 @@ export class Player {
         );
         this.setConfig(config, true);
     }
-
+    // 获取生命值
     public getHealth () { return Number(this.getConfig("health", this.getMaxHealth()).toFixed(4)); }
+    // 获取最大生命值
     public getMaxHealth () { return this.getConfig("maxHealth", 40); }
+    // 获取生命值百分比
     public getHealthPercentage () { return Number(this.getConfig("health", 40) / this.getConfig("maxHealth", 40));}
+    // 设置生命值
     public setHealth (health: number) { this.setConfig({health: Number(health)}); this.refreshHealth(); }
+    // 设置最大生命值
     public setMaxHealth (maxHealth: number) { this.setConfig({maxHealth: Number(maxHealth)}); this.refreshHealth(); }
 
+    /**
+     * 使用物品
+     *
+     * @param id - 物品ID
+     * @param nbt - 物品NBT
+     * @returns - 是否使用成功
+     *
+     */
     public useItem (id: string, nbt?: NBT | undefined) {
         let config = this.config;
         for (let i of config.inventory) {
             if (i.id == id && (nbt ? _.isEqualWith(i.nbt, nbt) : true)) {
                 let result = Item.match(id).onUse(new ItemStack(i), this);
+                config = this.config;
                 this.setConfig(config);
                 return result;
             }
@@ -200,6 +286,16 @@ export class Player {
         return false;
     }
 
+    /**
+     * 使用物品
+     *
+     * @param event - 群指令事件
+     * @param args - 指令参数
+     * @param id - 物品ID
+     * @param nbt - 物品NBT
+     * @returns - 是否使用成功
+     *
+     */
     public use (event: Bot.GroupCommandEvent, args: Bot.ParseResult, id: string, nbt?: NBT | undefined) {
         let config = this.config;
         for (let i of config.inventory) {
@@ -214,10 +310,35 @@ export class Player {
         return false;
     }
 
+    // 刷新生命值
     refreshHealth () {
         if (this.getMaxHealth() < this.getHealth()) this.setHealth(this.getMaxHealth());
         if (this.getMaxHealth() < 40) this.setMaxHealth(40);
         if (this.getHealth() < 0) this.setHealth(this.getMaxHealth());
     }
 
+    /**
+     * 合成一个物品
+     *
+     * @param id - 合成物品ID
+     * @param plan - 合成方案
+     * @returns - [是否合成, 材料不足, 配方]: 如果物品无法合成，返回[false]，如果物品材料不足，返回[false, true]，否则返回[false, true, Recipe]
+     *
+     */
+    craft (id: string, plan: number): [false, true] | [true, false, Recipe] | [false] {
+        let inv: PlayerConfig["inventory"] = this.getConfig("inventory", []);
+        let results = recipes.filter(i => i.result.id == id);
+        if (results) {
+            let result = results[plan];
+            for (let i of result.recipe) {
+                if (!(this.count(i.id, i.nbt) >= i.count)) return [false, true];
+                else this.takeItem(i.id, i.count, i.nbt);
+            }
+            let stack = {id: result.result.id, nbt: result.result.nbt, count: result.result.count};
+            if (Item.match(result.result.id).onCraft(new ItemStack(stack), this)) {
+                this.giveItem(stack);
+                return [true, false, result];
+            } else return [false];
+        } else return [false];
+    }
 }

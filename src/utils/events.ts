@@ -19,9 +19,9 @@ export class GroupCommandEvent {
     // 指令名称
     public readonly commandName: string;
     // 原参数字符串
-    public readonly rawArgs: string;
+    public rawArgs: string;
     // 去除左右空格后的参数字符串
-    public readonly trimmedArgs: string;
+    public trimmedArgs: string;
     // 解析后的指令参数，如果解析错误则为空列表
     public readonly parsedArgs: ParseResult;
 
@@ -69,12 +69,12 @@ export class GroupCommandEvent {
     }
 
     async reply (content: Adapter.Sendable, quote?: boolean) {
-        await this.rawEvent.reply(content, quote);
+        return await this.rawEvent.reply(content, quote);
     }
 
     async replyAt (content: Adapter.Sendable, quote?: boolean) {
-        if (Array.isArray(content)) await this.rawEvent.reply([MessageSegment.At(this.sender.userId), ...content], quote);
-        else await this.rawEvent.reply([MessageSegment.At(this.sender.userId), content], quote);
+        if (Array.isArray(content)) return await this.rawEvent.reply([MessageSegment.At(this.sender.userId), ...content], quote);
+        else return await this.rawEvent.reply([MessageSegment.At(this.sender.userId), content], quote);
     }
 
     async reCall () {

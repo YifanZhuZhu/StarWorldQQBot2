@@ -1,9 +1,11 @@
 import * as BotItem from "../../plugins/core";
 import * as Bot from '../../src';
 
+import _ from "lodash";
+
 import json5 from "json5";
 
-export function parseAt (token: Bot.ArgumentSpecial<Bot.Elements.AtElement> | Bot.ArgumentToken<"Numeric">) {
+export function parseAt (token: Bot.ArgumentSpecial<Bot.AtElement> | Bot.ArgumentToken<"Numeric">) {
     if (token.type == "Token") {
         return Number(token.value.value);
     } else if (token.type == "Special") {
@@ -27,12 +29,12 @@ export async function onInventory (event: Bot.GroupCommandEvent, ...args: Bot.Pa
 }
 
 Bot.Command.register(
-    `${Bot.Command.commandPrefix.Super}给`,
+    `${Bot.Command.commandPrefix.Super}给予`,
     onGive,
     [
-        `${Bot.Command.commandPrefix.Super}给 [@目标] [物品]`
+        `${Bot.Command.commandPrefix.Super}给予 [@目标] [物品]`
     ].join("\n"),
-    "给玩家物品"
+    "给予玩家物品"
 );
 
 export async function onGive (event: Bot.GroupCommandEvent, ...args: Bot.ParseResult): Promise<boolean> {
@@ -168,7 +170,7 @@ Bot.Command.register(
     `${Bot.Command.commandPrefix.Normal}使用`,
     onUse,
     [
-        `${Bot.Command.commandPrefix.Normal}使用 [物品ID] [?物品NBT]`
+        `${Bot.Command.commandPrefix.Normal}使用 [物品ID] [?物品NBT] [?...参数]`
     ].join("\n"),
     "使用物品"
 );
@@ -188,12 +190,12 @@ export async function onUse (event: Bot.GroupCommandEvent, ...args: Bot.ParseRes
 }
 
 Bot.Command.register(
-    `${Bot.Command.commandPrefix.Normal}个人信息`,
+    `${Bot.Command.commandPrefix.Normal}信息`,
     onUserInfo,
     [
-        `${Bot.Command.commandPrefix.Normal}个人信息`
+        `${Bot.Command.commandPrefix.Normal}信息`
     ].join("\n"),
-    "查看个人信息"
+    "查看玩家信息"
 );
 
 export async function onUserInfo (event: Bot.GroupCommandEvent, ...args: Bot.ParseResult): Promise<boolean> {
@@ -201,10 +203,10 @@ export async function onUserInfo (event: Bot.GroupCommandEvent, ...args: Bot.Par
 }
 
 Bot.Command.register(
-    `${Bot.Command.commandPrefix.Super}个人信息`,
+    `${Bot.Command.commandPrefix.Super}信息`,
     onSuperUserInfo,
     [
-        `${Bot.Command.commandPrefix.Super}个人信息`
+        `${Bot.Command.commandPrefix.Super}信息`
     ].join("\n"),
     "查看玩家个人信息"
 );
@@ -223,5 +225,83 @@ export async function getUserInfo (event: Bot.GroupCommandEvent, args: Bot.Parse
             `生命值 (${player.getHealth()} / ${player.getMaxHealth()})：[${("=".repeat(Math.trunc(player.getHealthPercentage() * 10)) + "->" + "-".repeat(10 - Math.trunc((player.getHealthPercentage() * 10)))).trim()}]`
         ].join("\n")
     );
+    return true;
+}
+
+Bot.Command.register(
+    `${Bot.Command.commandPrefix.Normal}合成`,
+    onCraft,
+    [
+        `${Bot.Command.commandPrefix.Normal}合成 [物品ID]`,
+        `${Bot.Command.commandPrefix.Normal}合成 [物品ID] [合成方案]`
+    ].join("\n"),
+    "合成物品"
+);
+
+export async function onCraft (event: Bot.GroupCommandEvent, ...args: Bot.ParseResult): Promise<boolean> {
+    if (args.length < 1 || args.length > 2) return false;
+    let id = json5.parse((args[0].value as Bot.Token<"String">).value);
+    if (args.length == 2) {
+        let plan = json5.parse((args[1].value as Bot.Token<"Numeric">).value) as number;
+        return await getCraft(event, args, id, plan);
+    } else if (args.length == 1) return await getCraftPlans(event, args, id);
+    else return false;
+}
+
+export async function getCraftPlans (event: Bot.GroupCommandEvent, args: Bot.ParseResult, id: string) {
+    let recipes = BotItem.recipes.filter(i => i.result.id == id);
+    let forwards: Bot.BotMessage.FakeGroupForwardMessage[] = [
+        {
+            user_id: Bot.config.uin,
+            message: `物品 ${BotItem.Item.match(id).getName()} (${BotItem.Item.match(id).getId()}) 的配方: ${recipes.length}个方案`
+        }
+    ];
+    for (let index of Object.keys(recipes)) {
+        let item = recipes[Number(index)];
+        let itemName = BotItem.Item.match(item.result.id).toString(new BotItem.ItemStack(item.result));
+        let recipeNames: string[] = [];
+        for (let i of _.get(item, "recipe", [] as {count: number; id: string; nbt?: BotItem.NBT}[])) {
+            recipeNames.push(
+                BotItem.Item.match(i.id).toString(
+                    new BotItem.ItemStack({nbt: {}, ...i})
+                )
+            );
+        }
+        forwards.push(
+            {
+                user_id: Bot.config.uin,
+                message: `[${index}] ${itemName}\n\n${JSON.stringify(item.result.nbt)}\n\n配方: \n${recipeNames.map(i => "    " + i + "\n")}`
+            }
+        );
+    }
+    await event.reply(await Bot.BotMessage.makeFakeGroupForward(event.groupId, forwards));
+    return true;
+}
+
+export async function getCraft (event: Bot.GroupCommandEvent, args: Bot.ParseResult, id: string, plan: number): Promise<boolean> {
+    if (!(plan in BotItem.recipes.filter(i => i.result.id == id))) {
+        await event.replyAt(" 未找到合成方案");
+        return true;
+    }
+    let player = BotItem.Player.of(event.sender.userId);
+    let results = player.craft(id, plan);
+    let isCraft = results[0];
+    if (isCraft) {
+        let result = (results as [true, false, BotItem.Recipe])[2];
+        let recipes: string[] = [];
+        for (let i of _.get(result, "recipe", [] as {count: number; id: string; nbt?: BotItem.NBT}[])) {
+            recipes.push(BotItem.Item.match(i.id).toString(new BotItem.ItemStack({nbt: {}, ...i})) + ` ${JSON.stringify(i.nbt ?? {})}`);
+        }
+        let resultItem = _.get(result, "result", {count: 0, nbt: {}} as any);
+        let resultItemString = BotItem.Item.match(id).toString(new BotItem.ItemStack({id, nbt: {}, ...resultItem}));
+        await event.replyAt(` 物品 ${resultItemString} 合成成功，消耗了\n${recipes.map(i => "    " + i + "\n")}`);
+    }
+    else {
+        if (results[1]) {
+            await event.replyAt(" 合成材料不足");
+            return true;
+        }
+        await event.replyAt(" 物品无法合成");
+    }
     return true;
 }

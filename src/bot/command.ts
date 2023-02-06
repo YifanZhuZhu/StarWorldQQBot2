@@ -33,7 +33,7 @@ export interface ArgumentSpecial <T> extends ArgumentStruct<T> {
     type: "Special",
 }
 
-export type ArgumentType = ArgumentToken<string> | ArgumentSpecial<Bot.Element>;
+export type ArgumentType = ArgumentToken<string> | ArgumentSpecial<Bot.MessageElement>;
 
 export type ParseResult = ArgumentType[];
 
@@ -101,15 +101,16 @@ export namespace Command {
     };
 
     export const allCommands: Command[] = [];
-    export const allMessageHandlers: CommandExecute[] = [];
+    export const allMessageHandlers: {name: string; handler: CommandExecute}[] = [];
 
     export async function * executeMessage (event: oicq.GroupMessageEvent) {
         for (let i of Command.allMessageHandlers) {
             let result = Command.parse(event);
             try {
                 let commandEvent = new api.GroupCommandEvent(event, i.name, result);
-                let executeReturn = await i(commandEvent, ...result);
-                yield {command: i, result: executeReturn, event: commandEvent};
+                let executeReturnRaw = i.handler(commandEvent, ...result);
+                let executeReturn = await executeReturnRaw;
+                yield {command: i, result: executeReturn, event: commandEvent, rawResult: executeReturnRaw};
             } catch (e) {
                 Bot.Bot.client.logger.error(`消息处理识别 ${i.name}`);
                 Bot.Bot.client.logger.error(e);
@@ -117,8 +118,9 @@ export namespace Command {
         }
     }
 
-    export function onMessage (handler: CommandExecute) {
-        allMessageHandlers.push(handler);
+    // 注册一个消息事件
+    export function onMessage (name: string, handler: CommandExecute) {
+        allMessageHandlers.push({name, handler});
     }
 
     export async function* execute (event: oicq.GroupMessageEvent) {
@@ -146,6 +148,17 @@ export namespace Command {
         }
     }
 
+    /**
+     * 注册一个指令
+     *
+     * @param name - 指令名称
+     * @param execute - 触发时执行的函数
+     * @param help - 指令帮助
+     * @param description - 指令详细介绍
+     * @param showInHelp - 是否在帮助指令中显示
+     * @param data - 自定义数据
+     *
+     */
     export function register (name: string, execute: CommandExecute, help?: string, description?: string, showInHelp = true, data?: any) {
         allCommands.push(
             {
@@ -154,6 +167,17 @@ export namespace Command {
         );
     }
 
+    /**
+     * 指令注册模板
+     *
+     * @param name - 指令名称
+     * @param help - 指令帮助
+     * @param description - 指令详细介绍
+     * @param showInHelp - 是否在帮助指令中显示
+     * @param data - 自定义数据
+     * @returns [(execute: CommandExecute) => void] 指令注册器
+     *
+     */
     export function registerTemplate (name: string, help?: string, description?: string, showInHelp = true, data?: any) {
         return (execute: CommandExecute) => {
             allCommands.push(
@@ -182,13 +206,16 @@ if (config.help) Command.register(
 export async function onHelp (event: Bot.GroupCommandEvent): Promise<boolean> {
     let result = "";
     let status = false;
-    let rawArgs = event.trimmedArgs;
+    let rawArgs = event.trimmedArgs.trim();
     if (rawArgs.length <= 0) {
         result += `帮助 —— ${Bot.config.name}\n`;
         let superCommands = _.cloneDeep(Command.allCommands).filter(i => i.name.startsWith(Command.commandPrefix.Super));
         let debugCommands = _.cloneDeep(Command.allCommands).filter(i => i.name.startsWith(Command.commandPrefix.Debug));
         let normalCommands = _.cloneDeep(Command.allCommands).filter(i => i.name.startsWith(Command.commandPrefix.Normal));
-        let commands = [...superCommands, ...debugCommands, ...normalCommands];
+        let commands: Command.Command[] = [];
+        if (Bot.config.superUsers.includes(event.sender.userId)) commands.push(...superCommands);
+        commands.push(...debugCommands);
+        commands.push(...normalCommands);
         for (let i of commands) {
             if (i.showInHelp) result += `\n${i.name}: ${i.description}`;
         }

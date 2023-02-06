@@ -35,14 +35,15 @@ export const config: StarWorldBotConfig = {
     uin: 你的机器人QQ号,
     password: "你的机器人QQ密码",
     superUsers: [ ...管理员QQ号 ],
-    platform: 登录设备 /* 推荐 Adapter.Platform.iPad */,
+    platform: Adapter.Platform.iPad /* 登录设备，推荐 Adapter.Platform.iPad */,
     name: "机器人名称",
     pluginPathList: [
         path.resolve(__dirname, "../plugins/"),
         path.resolve(__dirname, "../core/mods/"),
         ...(你的插件路径)
     ],
-    help: 是否启用指令帮助/* 推荐 true */,
+    help: true /* 是否启用指令帮助，建议true */,
+    helpAt: true /* 是否在@机器人时发送帮助信息，建议true */,
     defaultId: "默认物品ID前缀",
 };
 

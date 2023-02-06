@@ -1,17 +1,10 @@
-import Command from "./command";
+import Command, { onHelp } from "./command";
+import { GroupCommandEvent } from "../utils";
 
 import * as BotAdapter from "oicq";
 
 import path from "path";
 import fs from "fs";
-
-export function sleep (timeout: number): Promise<NodeJS.Timeout> {
-    return new Promise(
-        (resolve) => {
-            let timer: NodeJS.Timeout = setTimeout(() => resolve(timer), timeout);
-        }
-    );
-}
 
 export interface StarWorldBotConfig {
     uin: number;
@@ -21,6 +14,7 @@ export interface StarWorldBotConfig {
     name: string;
     pluginPathList: string[];
     help: boolean;
+    helpAt: boolean;
     defaultId: string;
 }
 
@@ -49,7 +43,8 @@ export class StarWorldBot {
         ).on("message.group", this.onCommandGroup.bind(this)
         ).on("system.login.qrcode", this.onQrCodeLogin.bind(this)
         ).on("system.login.slider", this.onSliderLogin.bind(this)
-        ).on("system.login.device", this.onDeviceLogin.bind(this));
+        ).on("system.login.device", this.onDeviceLogin.bind(this)
+        );
         await this.client.login(this.config.password);
         await this.onBeforeLogin();
     }
@@ -83,7 +78,7 @@ export class StarWorldBot {
 
     }
 
-    public loadPluginsFromDirectory(dirname: string): void {
+    public loadPluginsFromDirectory (dirname: string): void {
         this.client.logger.info("正在加载插件");
         let plugins = fs.readdirSync(path.resolve(__dirname, dirname));
         for (let _path of plugins) {
@@ -112,9 +107,16 @@ export class StarWorldBot {
     }
 
     public async onCommandGroup (event: BotAdapter.GroupMessageEvent) {
+        // 如果直接@机器人，发送帮助信息科
+        if (event.message.length == 1 && event.message[0].type == "at" && event.message[0].qq == this.config.uin && this.config.helpAt) {
+            let commandEvent = new GroupCommandEvent(event, "", []);
+            commandEvent.trimmedArgs = "";
+            commandEvent.rawArgs = "";
+            await onHelp (commandEvent);
+        }
         for await (let i of Command.executeMessage(event)) {
             if (i.result) {
-                this.client.logger.info(`用户 ${event.sender.nickname} (${event.sender.user_id}) 触发了消息事件 [${i.command?.name ? i.command?.name : "匿名事件"}] `);
+                this.client.logger.info(`用户 ${event.sender.nickname} (${event.sender.user_id}) 触发了消息事件 [${i.rawResult instanceof Promise ? "异步事件" : "同步事件"}: ${i.command.name}] `);
             }
         }
         for await (let i of Command.execute(event)) {
@@ -130,5 +132,6 @@ export class StarWorldBot {
 
 export * from "./adapter";
 export * from "./command";
+export * from "./client";
 
 export * as Adapter from "oicq";

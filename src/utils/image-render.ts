@@ -16,9 +16,13 @@ export type TypeOrPromise <T> = T | Promise<T>;
 
 export namespace BrowserRender {
     export type RenderCallBack = ($: JQueryStatic, window: jsdom.DOMWindow, document: Document, page: Page) => void | Promise<void>;
-    export async function render (callback: RenderCallBack | string): Promise<Bot.Elements.ImageElement> {
+    export type JSDOMCallback = ($: JQueryStatic, window: jsdom.DOMWindow, document: Document, dom: jsdom.JSDOM) => void | Promise<void>;
+
+
+    export async function render (callback: RenderCallBack | string): Promise<Bot.ImageElement> {
         return MessageSegment.Image(await renderAsBuffer(callback));
     }
+
     export async function renderAsBuffer (callback: RenderCallBack | string): Promise<Buffer> {
         let dom = new jsdom.JSDOM;
         let window = dom.window;
@@ -36,6 +40,15 @@ export namespace BrowserRender {
         await page.close();
         await browser.close();
         return screenShot as Buffer;
+    }
+
+    export async function createJSDOM (callback: JSDOMCallback = (...args) => {}) {
+        let dom = new jsdom.JSDOM;
+        let window = dom.window;
+        let document = dom.window.document;
+        let $ = (await import("jquery"))["default"](window) as any as JQueryStatic;
+        callback($, window, document, dom);
+        return {dom, window, document, $, callback};
     }
 }
 
@@ -61,7 +74,7 @@ export async function cacheStaticFile (url: string, encoder: Encoder = (buffer: 
     let md5 = generateMD5(url);
     let dir = cachePath;
     let filePath = path.join(dir, md5);
-    fs.mkdirSync(dir,{recursive: true});
+    fs.mkdirSync(dir, {recursive: true});
     if (memory && md5 in memoryCache) return [filePath, await decoder(memoryCache[md5], url, filePath)];
     if (fs.existsSync(filePath)) {
         let buffer = await decoder(fs.readFileSync(filePath), url, filePath);
@@ -91,4 +104,12 @@ export function generateMD5 (content: string): string {
 export function cacheLocalFile (path: string): Buffer {
     if (!(path in memoryLocalCache)) memoryLocalCache[path] = fs.readFileSync(path);
     return memoryLocalCache[path];
+}
+
+export function sleep (timeout: number): Promise<NodeJS.Timeout> {
+    return new Promise(
+        (resolve) => {
+            let timer: NodeJS.Timeout = setTimeout(() => resolve(timer), timeout);
+        }
+    );
 }

@@ -5,11 +5,11 @@ import _ from "lodash";
 
 
 Bot.Command.register(
-    `${Bot.Command.commandPrefix.Normal}幸运转盘`,
+    `${Bot.Command.commandPrefix.Normal}转盘`,
     onTurntable,
     [
-        `${Bot.Command.commandPrefix.Normal}幸运转盘`,
-        `${Bot.Command.commandPrefix.Normal}幸运转盘 奖品列表`
+        `${Bot.Command.commandPrefix.Normal}转盘`,
+        `${Bot.Command.commandPrefix.Normal}转盘 奖品列表`
     ].join("\n"),
     "幸运转盘，20货币一次"
 );
@@ -93,16 +93,22 @@ export async function getTurntableItems (event: Bot.GroupCommandEvent, ...args: 
 }
 
 Bot.Command.onMessage(
+    "随机掉落",
     onRandomGive,
 );
 
 export async function onRandomGive (event: Bot.GroupCommandEvent, ...args: Bot.ParseResult) {
-    if (_.random(0, 200) == 50) {
+    let random = _.random(1, 200);
+    let random2 = _.random(0, 97);
+    let isNumber = Array.from(event.rawEvent.raw_message.trim()).every(i => !isNaN(Number(i)));
+    if ([1, 50].includes(random) || (isNumber && random2 == 1)) {
+        Bot.logger.mark(`[随机掉落] 随机数一: ${random} 随机数二: ${random2} 是否为数字文本: ${isNumber}`);
         let id = BotItem.CopperCoinItem.id;
         let item = BotItem.Item.match(id);
         let player = BotItem.Player.of(event.sender.userId);
-        player.giveItem({count: 20, id, nbt: {}});
-        await event.replyAt(`\n[随机掉落] 你获得了 ${item.getName()} (${id}) * 20`);
+        let itemStack = {count: 20, id, nbt: {}};
+        player.giveItem(itemStack);
+        await event.replyAt(`\n[随机掉落] 你获得了 ${item.toString(new BotItem.ItemStack(itemStack), player)}`);
         return true;
     }
     return false;

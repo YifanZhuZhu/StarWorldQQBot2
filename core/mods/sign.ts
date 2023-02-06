@@ -3,12 +3,12 @@ import * as BotItem from "../../plugins/core";
 
 
 Bot.Command.register(
-    `${Bot.Command.commandPrefix.Normal}每日签到`,
+    `${Bot.Command.commandPrefix.Normal}签到`,
     onSign,
     [
-        `${Bot.Command.commandPrefix.Normal}每日签到`
+        `${Bot.Command.commandPrefix.Normal}签到`
     ].join("\n"),
-    "每日签到"
+    "每日签到，可获得随机数量奖品"
 );
 
 export async function onSign (event: Bot.GroupCommandEvent, ...args: Bot.ParseResult): Promise<boolean> {
