@@ -1,5 +1,5 @@
-import * as BotItem from "../../plugins/core";
-import * as Bot from '../../src';
+import * as BotItem from "~/plugins/core";
+import * as Bot from "swbot";
 
 import _ from "lodash";
 

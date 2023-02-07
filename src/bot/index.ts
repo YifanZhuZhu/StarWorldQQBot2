@@ -1,5 +1,5 @@
 import Command, { onHelp } from "./command";
-import { GroupCommandEvent } from "../utils";
+import { GroupCommandEvent } from "~/src";
 
 import * as BotAdapter from "oicq";
 
@@ -107,8 +107,8 @@ export class StarWorldBot {
     }
 
     public async onCommandGroup (event: BotAdapter.GroupMessageEvent) {
-        // 如果直接@机器人，发送帮助信息科
-        if (event.message.length == 1 && event.message[0].type == "at" && event.message[0].qq == this.config.uin && this.config.helpAt) {
+        // 如果直接@机器人，发送帮助信息
+        if ((event.message.length == 1 || (event.message.length == 2 && event.message[1].type == "text" && event.message[1].text.trim() == "")) && event.message[0].type == "at" && event.message[0].qq == this.config.uin && this.config.helpAt) {
             let commandEvent = new GroupCommandEvent(event, "", []);
             commandEvent.trimmedArgs = "";
             commandEvent.rawArgs = "";

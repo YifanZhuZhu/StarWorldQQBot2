@@ -11,4 +11,13 @@
       ]
     }
   },
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "swbot": ["./src/"],
+      "swbot/*": ["./src/*"],
+      "@/*": ["./src/*"],
+      "~/*": ["./*"]
+    }
+  }
 }

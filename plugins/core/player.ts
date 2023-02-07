@@ -1,4 +1,4 @@
-import * as Bot from "../../src/index";
+import * as Bot from "swbot";
 
 import { Item, ItemStack, ItemStackInterface, NBT, players, signItems, UnknownItem, recipes, Recipe } from "./item";
 
@@ -33,7 +33,7 @@ export class Player {
      *
      * @constructor
      * @param id - 玩家ID
-     * @returns [Player] 玩家
+     * @returns - 玩家
      *
      */
     public static of (id: number) {
@@ -49,7 +49,7 @@ export class Player {
      *
      * @constructor
      * @param id - 玩家ID
-     * @returns [Player] 玩家
+     * @returns - 玩家
      *
      */
     constructor (id: number) {
@@ -111,7 +111,7 @@ export class Player {
      * 给予物品
      *
      * @param item - 物品堆叠
-     * @returns [Boolean] 是否给予成功
+     * @returns - 是否给予成功
      *
      */
     public giveItem (item: ItemStackInterface) {
@@ -142,7 +142,7 @@ export class Player {
      * @param event - 群消息事件
      * @param commandArgs - 指令参数
      * @param item - 物品堆叠
-     * @returns [Boolean] 是否给予成功
+     * @returns - 是否给予成功
      *
      */
     public give (event: Bot.GroupCommandEvent, commandArgs: Bot.ParseResult, item: ItemStack | ItemStackInterface) {

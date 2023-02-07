@@ -1,5 +1,5 @@
-import * as BotItem from "../../plugins/core/index";
-import * as Bot from "../../src";
+import * as BotItem from "~/plugins/core";
+import * as Bot from "swbot";
 
 export function Identifier (path: string) {
     return `more_foods:${path}`;
