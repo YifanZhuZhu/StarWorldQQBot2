@@ -1,4 +1,4 @@
-import { Adapter } from "../bot";
+import { Adapter } from "swbot";
 
 export class StarWorldBotClient {
 

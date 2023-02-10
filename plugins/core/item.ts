@@ -1,4 +1,4 @@
-import * as Bot from "../../src/index";
+import * as Bot from "swbot";
 
 import { Player } from "./player";
 
@@ -15,7 +15,7 @@ export interface NBT {
 
 export type JSONType =
     | JSONType[]
-    | {[index: string | number]: JSONType}
+    | { [index: string | number]: JSONType }
     | string
     | number
     | boolean
@@ -39,44 +39,74 @@ export interface Recipe {
     recipe: { count: number, id: string, nbt?: NBT }[],
 }
 
-export class Item {
-
+export class ItemStatic {
     private static readonly all: {[index: string]: Item} = {};
-    public static readonly id: string | undefined | null;
-
-    // eslint-disable-next-line no-undef
-    private inventoryInterval: NodeJS.Timer | undefined;
-
-    public data: any = {};
-
+    /**
+     * 获取所有注册的物品
+     *
+     * @returns - {@link Item.all}
+     *
+     */
+    public static getAll () {
+        let result: typeof ItemStatic.all = {};
+        for (let i of Object.keys(ItemStatic.all)) {
+            result[i] = ItemStatic.all[i];
+        }
+        return result;
+    }
     /**
      * 注册物品
      *
      * @param item - 物品类
      * @param id - 物品ID
      *
+     * @example
+     * Item.register(MyItem); // 或 Item.register(MyItem, "mod:item")
      */
-    public static register (item: typeof Item, id: string | null = null) {
+    public static registry (item: typeof Item, id: string | null = null) {
         // eslint-disable-next-line new-cap
         if (!id && typeof item.id === "string") this.all[item.id] = new item;
         // eslint-disable-next-line new-cap
         else if (id) this.all[id] = new item;
         return Item;
     }
-
     /**
-     * 获取所以注册的物品
+     * 注册物品
      *
-     * @returns - {@link Item.all}
+     * @param id - 物品ID
      *
+     * @example
+     * ```
+     * @Item.register()
+     * class MyItem extends Item {
+     *     public static id = "mod:item";
+     * }
+     * ```
      */
-    public static getAll () {
-        let result: typeof Item.all = {};
-        for (let i of Object.keys(Item.all)) {
-            result[i] = Item.all[i];
-        }
-        return result;
+    public static register (id?: string) {
+        return <T extends typeof Item> (target: T) => {
+            ItemStatic.registry(target, id);
+            return target;
+        };
     }
+}
+
+/**
+ * 物品
+ *
+ * @constructor
+ *
+ * @example
+ * class MyItem extends Item {
+ *     public static id = "mod:item"
+ * }
+ */
+export class Item extends ItemStatic {
+
+    public static readonly id: string | undefined | null;
+    private inventoryInterval: NodeJS.Timer | undefined;
+
+    public data: any = {};
 
     /**
      * 匹配注册的物品
@@ -86,7 +116,7 @@ export class Item {
      *
      */
     public static match (id: string) {
-        return id in Item.all ? Item.all[id] : new UnknownItem;
+        return id in Item.getAll() ? Item.getAll()[id] : new UnknownItem;
     }
 
     // 获取物品名称
@@ -124,31 +154,31 @@ export class Item {
 
 }
 
+@Item.register()
 export class UnknownItem extends Item {
     public static id = Identifier("air");
 
-    public getName(stack: ItemStack, player: Player): string { return "空气"; }
+    public getName (stack: ItemStack, player: Player): string { return "空气"; }
 }
 
-export class CopperCoinItem extends Item {
+@Item.register()
+export class CoinItem extends Item {
     public static id = Identifier("copper_coin");
     public getName (stack: ItemStack, player: Player): string { return "铜币"; }
     public getTooltip (stack: ItemStack, player: Player, event?: Bot.GroupCommandEvent, commandArgs?: Bot.ParseResult): string { return "基础货币"; }
     public onTake (stack: ItemStack, player: Player, event: Bot.GroupCommandEvent, commandArgs: Bot.ParseResult): boolean { return false; }
 }
 
+@Item.register()
 export class ExperienceItem extends Item {
     public static id = Identifier("experience");
     public getName (stack: ItemStack, player: Player, event?: Bot.GroupCommandEvent, commandArgs?: Bot.ParseResult): string { return "经验"; }
     public onTake (stack: ItemStack, player: Player, event: Bot.GroupCommandEvent, commandArgs: Bot.ParseResult): boolean { return false; }
 }
 
-Item.register(UnknownItem).register(CopperCoinItem).register(ExperienceItem);
-
-export const players: Player[] = [];
 export const recipes: Recipe[] = [];
 export const signItems: {id: string, min: number, max: number, nbt: NBT}[] = [
-    {id: CopperCoinItem.id, min: 20, max: 40, nbt: {}},
+    {id: CoinItem.id, min: 20, max: 40, nbt: {}},
     {id: ExperienceItem.id, nbt: {}, min: 30, max: 50}
 ];
 
@@ -161,14 +191,3 @@ export function Identifier (path: string, namespace?: string) {
     let left = namespace ? namespace : Bot.config.defaultId;
     return `${left}:${path}`;
 }
-
-
-Bot.Bot.client.on(
-    "system.online",
-    async () => {
-        for (let i of Player.loadAllConfigs()) {
-            Bot.Bot.client.logger.info(`加载玩家配置文件 ${i.configFilePath}`);
-        }
-    }
-);
-

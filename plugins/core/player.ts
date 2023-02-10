@@ -1,6 +1,6 @@
 import * as Bot from "swbot";
 
-import { Item, ItemStack, ItemStackInterface, NBT, players, signItems, UnknownItem, recipes, Recipe } from "./item";
+import { Item, ItemStack, ItemStackInterface, NBT, signItems, UnknownItem, recipes, Recipe } from "./item";
 
 import fs from "fs";
 import path from "path";
@@ -164,7 +164,7 @@ export class Player {
      * @returns - 物品栏中的[物品]数量
      *
      */
-    public count (id: string, nbt: NBT | undefined = undefined) {
+    public count (id: string, nbt?: NBT) {
         let inv = this.getConfig<ItemStackInterface[]>("inventory", []);
         let result = 0;
         for (let i of inv) {
@@ -342,3 +342,15 @@ export class Player {
         } else return [false];
     }
 }
+
+export const players: Player[] = [];
+
+Bot.Bot.client.on(
+    "system.online",
+    async () => {
+        for (let i of Player.loadAllConfigs()) {
+            Bot.Bot.client.logger.mark(`加载玩家配置文件 ${i.configFilePath}`);
+        }
+    }
+);
+

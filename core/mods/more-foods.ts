@@ -5,6 +5,7 @@ export function Identifier (path: string) {
     return `more_foods:${path}`;
 }
 
+@BotItem.Item.register()
 export class BreadSliceItem extends BotItem.Item {
 
     public static readonly id = Identifier("bread_slice");
@@ -25,6 +26,7 @@ export class BreadSliceItem extends BotItem.Item {
 
 }
 
+@BotItem.Item.register()
 export class BreadItem extends BotItem.Item {
 
     public static readonly id = Identifier("bread");
@@ -50,7 +52,5 @@ BotItem.addRecipe( // 面包
 ).addRecipe( // 面包片
     { result: { count: 5, nbt: {}, id: BreadSliceItem.id }, recipe: [ { count: 1, id: BreadItem.id } ] }
 );
-
-BotItem.Item.register(BreadSliceItem).register(BreadItem);
 
 

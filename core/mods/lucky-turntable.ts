@@ -14,18 +14,18 @@ Bot.Command.register(
     "幸运转盘，20货币一次"
 );
 
-export const turntableItems: {id: string; count: number; nbt: BotItem.NBT; description?: string;}[] = [
-    {id: BotItem.CopperCoinItem.id, count: -10, nbt: {}, description: "，大失败！"},
-    {id: BotItem.CopperCoinItem.id, count: 0, nbt: {}, description: "，一无所获"},
-    {id: BotItem.CopperCoinItem.id, count: 10, nbt: {}},
-    {id: BotItem.CopperCoinItem.id, count: 20, nbt: {}, description: "，拿回了20货币"},
-    {id: BotItem.CopperCoinItem.id, count: 25, nbt: {}},
-    {id: BotItem.CopperCoinItem.id, count: 30, nbt: {}},
-    {id: BotItem.CopperCoinItem.id, count: 45, nbt: {}, description: "，大成功！"},
+export const turntableItems: {id: string; count: number; nbt: BotItem.NBT; remark?: string;}[] = [
+    {id: BotItem.CoinItem.id, count: -10, nbt: {}, remark: "，大失败！"},
+    {id: BotItem.CoinItem.id, count: 0, nbt: {}, remark: "，一无所获"},
+    {id: BotItem.CoinItem.id, count: 10, nbt: {}},
+    {id: BotItem.CoinItem.id, count: 20, nbt: {}, remark: "，拿回了20货币"},
+    {id: BotItem.CoinItem.id, count: 25, nbt: {}},
+    {id: BotItem.CoinItem.id, count: 30, nbt: {}},
+    {id: BotItem.CoinItem.id, count: 45, nbt: {}, remark: "，大成功！"},
     {id: BotItem.ExperienceItem.id, count: 10, nbt: {}},
     {id: BotItem.ExperienceItem.id, count: 30, nbt: {}},
     {id: BotItem.ExperienceItem.id, count: 45, nbt: {}},
-    {id: BotItem.UnknownItem.id, count: Number.MAX_VALUE, nbt: {}, description: "，一无所获..."},
+    {id: BotItem.UnknownItem.id, count: Number.MAX_VALUE, nbt: {}, remark: "，一无所获..."},
 ];
 
 Bot.Bot.client.on(
@@ -35,7 +35,7 @@ Bot.Bot.client.on(
             if (typeof i.data.turntableItems != "object" || !_.isArray(i.data.turntableItems)) continue;
             for (let j of i.data.turntableItems) {
                 let result: any = {id: (i.constructor as any)["id"], count: j.count, nbt: j.nbt};
-                if (j.description) result.description = j.description;
+                if (j.remark) result.remark = j.remark;
                 turntableItems.push(result);
             }
         }
@@ -50,7 +50,7 @@ export async function onTurntable (event: Bot.GroupCommandEvent, ...args: Bot.Pa
 
 export async function doTurntable (event: Bot.GroupCommandEvent, ...args: Bot.ParseResult): Promise<boolean> {
     let player = BotItem.Player.of(event.sender.userId);
-    let coin = BotItem.CopperCoinItem.id;
+    let coin = BotItem.CoinItem.id;
     let coinItem = BotItem.Item.match(coin);
     if (player.count(coin, {}) >= 20) {
         let resultIndex = _.sample(_.range(0, turntableItems.length)) as number;
@@ -59,7 +59,7 @@ export async function doTurntable (event: Bot.GroupCommandEvent, ...args: Bot.Pa
         player.give(event, args, result);
         await event.reply(
             [
-                Bot.MessageSegment.At(event.sender.userId), ` 指针停在了数字${resultIndex + 1}上，获得了 「 ${BotItem.Item.match(result.id).toString(new BotItem.ItemStack(result), player)} 」 ${(typeof ((result as any).description) != "undefined") ? (result as any).description : ""}`
+                Bot.MessageSegment.At(event.sender.userId), ` 指针停在了数字${resultIndex + 1}上，获得了 「 ${BotItem.Item.match(result.id).toString(new BotItem.ItemStack(result), player)} 」 ${(typeof ((result as any).remark) != "undefined") ? (result as any).remark : ""}`
             ]
         );
     } else {
@@ -98,12 +98,12 @@ Bot.Command.onMessage(
 );
 
 export async function onRandomGive (event: Bot.GroupCommandEvent, ...args: Bot.ParseResult) {
-    let random = _.random(1, 200);
+    let random = _.random(1, 250);
     let random2 = _.random(0, 97);
     let isNumber = Array.from(event.rawEvent.raw_message.trim()).every(i => !isNaN(Number(i)));
     if ([1, 50].includes(random) || (isNumber && random2 == 1)) {
         Bot.logger.mark(`[随机掉落] 随机数一: ${random} 随机数二: ${random2} 是否为数字文本: ${isNumber}`);
-        let id = BotItem.CopperCoinItem.id;
+        let id = BotItem.CoinItem.id;
         let item = BotItem.Item.match(id);
         let player = BotItem.Player.of(event.sender.userId);
         let itemStack = {count: 20, id, nbt: {}};

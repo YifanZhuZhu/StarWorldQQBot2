@@ -1,6 +1,6 @@
-import { Adapter, MessageSegment } from "../index";
+import { Adapter, MessageSegment } from "swbot";
 
-import { ParseResult } from "../bot";
+import { ParseResult } from "swbot";
 
 export interface CommandSender {
     userId: number;

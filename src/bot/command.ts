@@ -1,12 +1,11 @@
 import * as oicq from "oicq";
 import * as esprima from "esprima";
 import * as api from "../utils";
-
 import * as Bot from "../index";
 
 import config from "../config";
-
 import _ from "lodash";
+
 
 export type Awaitable<T> = T | Promise<T>;
 
@@ -160,9 +159,10 @@ export namespace Command {
      *
      */
     export function register (name: string, execute: CommandExecute, help?: string, description?: string, showInHelp = true, data?: any) {
+        Bot?.client?.logger?.mark(`指令已注册：${name}`);
         allCommands.push(
             {
-                name, execute, help, description, showInHelp, data
+                name, execute, help: help?.replaceAll("{{command}}", name), description: description?.replaceAll("{{command}}", name), showInHelp, data
             }
         );
     }

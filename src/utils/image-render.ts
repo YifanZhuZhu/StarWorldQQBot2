@@ -7,7 +7,7 @@ import ADMZip from "adm-zip";
 
 import * as Bot from "../index";
 
-import { MessageSegment } from "./message";
+import { MessageSegment } from "~/src";
 
 import puppeteer, { Page } from "puppeteer";
 import axios from "axios";
@@ -104,12 +104,4 @@ export function generateMD5 (content: string): string {
 export function cacheLocalFile (path: string): Buffer {
     if (!(path in memoryLocalCache)) memoryLocalCache[path] = fs.readFileSync(path);
     return memoryLocalCache[path];
-}
-
-export function sleep (timeout: number): Promise<NodeJS.Timeout> {
-    return new Promise(
-        (resolve) => {
-            let timer: NodeJS.Timeout = setTimeout(() => resolve(timer), timeout);
-        }
-    );
 }

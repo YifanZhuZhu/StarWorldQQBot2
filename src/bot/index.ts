@@ -18,6 +18,10 @@ export interface StarWorldBotConfig {
     defaultId: string;
 }
 
+export interface EventMap {
+
+}
+
 export class StarWorldBot {
 
     public config: StarWorldBotConfig;
@@ -25,7 +29,7 @@ export class StarWorldBot {
 
     public plugins: typeof module[] = [];
 
-    constructor (config: StarWorldBotConfig) {
+    constructor(config: StarWorldBotConfig) {
         let that = this;
         this.config = config;
         this.client = new BotAdapter.Client(
@@ -75,7 +79,6 @@ export class StarWorldBot {
         for (let i of this.config.pluginPathList) {
             this.loadPluginsFromDirectory(i);
         }
-
     }
 
     public loadPluginsFromDirectory (dirname: string): void {

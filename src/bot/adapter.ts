@@ -3,6 +3,7 @@ import { ChainElem, MessageElem, BfaceElem, ImageElem,
     JsonElem, PttElem, LocationElem, MfaceElem, MiraiElem,
     PokeElem, TextElem, XmlElem, ShareElem } from "oicq/lib/message/elements";
 
+
 export type MessageElement = MessageElem;
 export type ChainedElement = ChainElem;
 

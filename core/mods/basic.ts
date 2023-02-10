@@ -293,7 +293,7 @@ export async function getCraft (event: Bot.GroupCommandEvent, args: Bot.ParseRes
             recipes.push(BotItem.Item.match(i.id).toString(new BotItem.ItemStack({nbt: {}, ...i})) + ` ${JSON.stringify(i.nbt ?? {})}`);
         }
         let resultItem = _.get(result, "result", {count: 0, nbt: {}} as any);
-        let resultItemString = BotItem.Item.match(id).toString(new BotItem.ItemStack({id, nbt: {}, ...resultItem}));
+        let resultItemString = BotItem.Item.match(id).toString(new BotItem.ItemStack({id, nbt: {}, ...resultItem})) + " " + JSON.stringify({nbt: {}, ...resultItem}.nbt);
         await event.replyAt(` 物品 ${resultItemString} 合成成功，消耗了\n${recipes.map(i => "    " + i + "\n")}`);
     }
     else {

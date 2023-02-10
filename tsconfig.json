@@ -12,9 +12,11 @@
     }
   },
   "compilerOptions": {
+    "experimentalDecorators": true,
     "baseUrl": ".",
     "paths": {
       "swbot": ["./src/"],
+      "swbot/": ["./src"],
       "swbot/*": ["./src/*"],
       "@/*": ["./src/*"],
       "~/*": ["./*"]
