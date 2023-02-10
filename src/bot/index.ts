@@ -18,10 +18,6 @@ export interface StarWorldBotConfig {
     defaultId: string;
 }
 
-export interface EventMap {
-
-}
-
 export class StarWorldBot {
 
     public config: StarWorldBotConfig;

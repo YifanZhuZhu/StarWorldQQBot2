@@ -12,7 +12,6 @@ export interface NBT {
     [index: string]: JSONType
 }
 
-
 export type JSONType =
     | JSONType[]
     | { [index: string | number]: JSONType }
@@ -61,7 +60,7 @@ export class ItemStatic {
      * @param id - 物品ID
      *
      * @example
-     * Item.register(MyItem); // 或 Item.register(MyItem, "mod:item")
+     * Item.registry(MyItem); // 或 Item.registry(MyItem, "mod:item")
      */
     public static registry (item: typeof Item, id: string | null = null) {
         // eslint-disable-next-line new-cap
@@ -167,6 +166,8 @@ export class CoinItem extends Item {
     public getName (stack: ItemStack, player: Player): string { return "铜币"; }
     public getTooltip (stack: ItemStack, player: Player, event?: Bot.GroupCommandEvent, commandArgs?: Bot.ParseResult): string { return "基础货币"; }
     public onTake (stack: ItemStack, player: Player, event: Bot.GroupCommandEvent, commandArgs: Bot.ParseResult): boolean { return false; }
+
+    data = {canSell: false};
 }
 
 @Item.register()

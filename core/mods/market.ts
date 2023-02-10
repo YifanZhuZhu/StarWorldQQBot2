@@ -140,3 +140,6 @@ export interface MarketConfig {
     }[]
 }
 
+
+export const pluginName = "全球市场";
+
