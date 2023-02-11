@@ -115,7 +115,7 @@ export class StarWorldBot {
         }
         for await (let i of Command.executeMessage(event)) {
             if (i.result) {
-                this.client.logger.info(`用户 ${event.sender.nickname} (${event.sender.user_id}) 触发了消息事件 [${i.rawResult instanceof Promise ? "异步事件" : "同步事件"}: ${i.command.name}] `);
+                this.client.logger.info(`${event.sender.nickname} (${event.sender.user_id}) 触发了消息事件 [${i.rawResult instanceof Promise ? "异步事件" : "同步事件"}: ${i.command.name}] `);
             }
         }
         for await (let i of Command.execute(event)) {

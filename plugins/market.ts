@@ -42,7 +42,7 @@ export class MarketCommand extends Bot.Utils.Command {
         let count = json5.parse((args[3].value as Bot.Token<"Numeric">).value);
         let price = json5.parse((args[1].value as Bot.Token<"Numeric">).value);
         let stack = (player.config.inventory)[slot] as BotCore.ItemStackInterface;
-        let canSell = BotCore.Item.match(stack.id)?.data?.canSell;
+        let canSell = Bot.config.superUsers.includes(event.sender.userId) || BotCore.Item.match(stack.id)?.data?.canSell;
         if (typeof canSell == "undefined") canSell = true;
         if (!canSell || !Number.isSafeInteger(price) || price < 1 || !Number.isSafeInteger(count) || player.count(stack.id, stack.nbt) < count || count < 1) {
             await event.replyAt(" 物品无法售卖");
@@ -96,10 +96,13 @@ export class MarketCommand extends Bot.Utils.Command {
         for (let index of Object.keys(market)) {
             let cargo = market[Number(index)];
             let item = BotCore.Item.match(cargo.item.id);
+            let stack = new BotCore.ItemStack(cargo.item);
+            let seller = BotCore.Player.of(cargo.seller);
+            let tooltip = item.getTooltip(stack, seller).trim() ? "\n\n" + item.getTooltip(stack, seller) : "";
             fake.push(
                 {
                     user_id: Bot.config.uin,
-                    message: `[${index}] 价格: ${cargo.price}\n销售商: ${(await Bot.client.pickUser(cargo.seller).getSimpleInfo()).nickname} (${cargo.seller})\n\n物品: ${item.toString(new BotCore.ItemStack(cargo.item), BotCore.Player.of(cargo.seller))} \n\n数据标签: ${JSON.stringify(cargo.item.nbt)}`
+                    message: `[${index}] 价格: ${cargo.price}\n销售商: ${(await Bot.client.pickUser(cargo.seller).getSimpleInfo()).nickname} (${cargo.seller})\n\n物品: ${item.toString(stack, seller)}${tooltip}\n\n数据标签: ${JSON.stringify(cargo.item.nbt)}`
                 }
             );
         }

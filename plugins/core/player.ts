@@ -261,9 +261,9 @@ export class Player {
     // 获取生命值百分比
     public getHealthPercentage () { return Number(this.getConfig("health", 40) / this.getConfig("maxHealth", 40));}
     // 设置生命值
-    public setHealth (health: number) { this.setConfig({health: Number(health)}); this.refreshHealth(); }
+    public setHealth (health: number, onDied?: (lostItems: ItemStackInterface) => any) { this.setConfig({health: Number(health)}); this.refreshHealth(onDied); }
     // 设置最大生命值
-    public setMaxHealth (maxHealth: number) { this.setConfig({maxHealth: Number(maxHealth)}); this.refreshHealth(); }
+    public setMaxHealth (maxHealth: number, onDied?: (lostItems: ItemStackInterface) => any) { this.setConfig({maxHealth: Number(maxHealth)}); this.refreshHealth(onDied); }
 
     /**
      * 使用物品
@@ -311,11 +311,13 @@ export class Player {
     }
 
     // 刷新生命值
-    refreshHealth () {
+    refreshHealth (onDied?: (lostItems: ItemStackInterface) => any) {
         if (this.getMaxHealth() < this.getHealth()) this.setHealth(this.getMaxHealth());
         if (this.getMaxHealth() < 40) this.setMaxHealth(40);
         if (this.getHealth() <= 0) {
-            this.takeItem(CoinItem.id, Math.abs(Math.trunc(this.count(CoinItem.id, {}) * 0.1)), {});
+            let takeItem = {id: CoinItem.id, count: Math.abs(Math.trunc(this.count(CoinItem.id, {}) * 0.1)), nbt: {}};
+            onDied?.(takeItem);
+            this.takeItem(takeItem.id, takeItem.count, takeItem.nbt);
             this.setHealth(this.getMaxHealth());
         }
     }

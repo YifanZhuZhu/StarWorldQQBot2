@@ -1,10 +1,9 @@
 import BotCore from "~/plugins/core";
 import Bot from "swbot";
 import json5 from "json5";
-import BotItem from "~/plugins/core";
 import _ from "lodash";
 
-export const storeGoods: IStoreGood[] = [];
+export const storeGoods: IStoreItem[] = [];
 
 export function parseIdentifier (token: Bot.Token<"String" | "Identifier">) {
     if (token.type == "String") return json5.parse(token.value) as string;
@@ -15,7 +14,7 @@ export function parseIdentifier (token: Bot.Token<"String" | "Identifier">) {
 Bot.Bot.client.on(
     "system.online",
     async () => {
-        for (let i of Object.values(BotItem.Item.getAll())) {
+        for (let i of Object.values(BotCore.Item.getAll())) {
             if (typeof i.data.storeGoods != "object" || !_.isArray(i.data.storeGoods)) continue;
             for (let j of i.data.storeGoods) {
                 let item: any = {id: (i.constructor as any)["id"], count: j.item.count, nbt: j.item.nbt};
@@ -66,10 +65,13 @@ export class StoreCommand extends Bot.Utils.Command {
         for (let index of Object.keys(store)) {
             let storeItem = store[Number(index)];
             let item = BotCore.Item.match(storeItem.item.id);
+            let stack = new BotCore.ItemStack(storeItem.item);
+            let player = BotCore.Player.of(event.sender.userId);
+            let tooltip = item.getTooltip(stack, player).trim() ? "\n\n" + item.getTooltip(stack, player) : "";
             fake.push(
                 {
                     user_id: Bot.config.uin,
-                    message: `[${index}] 价格: ${storeItem.price}\n\n物品: ${item.toString(new BotCore.ItemStack(storeItem.item), BotCore.Player.of(event.sender.userId))} \n\n数据标签: ${JSON.stringify(storeItem.item.nbt)}`
+                    message: `[${index}] 价格: ${storeItem.price}\n\n物品: ${item.toString(stack, player)}${tooltip}\n\n数据标签: ${JSON.stringify(storeItem.item.nbt)}`
                 }
             );
         }
@@ -79,7 +81,7 @@ export class StoreCommand extends Bot.Utils.Command {
 
 }
 
-export interface IStoreGood {
+export interface IStoreItem {
     item: BotCore.ItemStackInterface,
     price: number,
 }
