@@ -1,4 +1,4 @@
-import * as Bot from "swbot";
+import Bot from "swbot";
 
 import { Player } from "./player";
 
@@ -67,6 +67,7 @@ export class ItemStatic {
         if (!id && typeof item.id === "string") this.all[item.id] = new item;
         // eslint-disable-next-line new-cap
         else if (id) this.all[id] = new item;
+        Bot.logger.mark(`物品已注册：${item.id}`);
         return Item;
     }
     /**

@@ -1,7 +1,7 @@
 import * as oicq from "oicq";
 import * as esprima from "esprima";
-import * as api from "../utils";
-import * as Bot from "../index";
+
+import Bot from "../index";
 
 import config from "../config";
 import _ from "lodash";
@@ -10,9 +10,9 @@ import _ from "lodash";
 export type Awaitable<T> = T | Promise<T>;
 
 export type CommandExecute =
-    | ((event: api.GroupCommandEvent, ...args: ParseResult) => Awaitable<boolean>)
-    | ((event: api.GroupCommandEvent) => Awaitable<boolean>)
-    | ((...args: [api.GroupCommandEvent, ...ParseResult]) => Awaitable<boolean>)
+    | ((event: Bot.GroupCommandEvent, ...args: ParseResult) => Awaitable<boolean>)
+    | ((event: Bot.GroupCommandEvent) => Awaitable<boolean>)
+    | ((...args: [Bot.GroupCommandEvent, ...ParseResult]) => Awaitable<boolean>)
     | (() => Awaitable<boolean>);
 
 export interface Token<V> {
@@ -106,7 +106,7 @@ export namespace Command {
         for (let i of Command.allMessageHandlers) {
             let result = Command.parse(event);
             try {
-                let commandEvent = new api.GroupCommandEvent(event, i.name, result);
+                let commandEvent = new Bot.GroupCommandEvent(event, i.name, result);
                 let executeReturnRaw = i.handler(commandEvent, ...result);
                 let executeReturn = await executeReturnRaw;
                 yield {command: i, result: executeReturn, event: commandEvent, rawResult: executeReturnRaw};
@@ -127,7 +127,7 @@ export namespace Command {
             let result = Command.parse(event, i.name.length);
             if (event.raw_message.startsWith(i.name)) {
                 try {
-                    let commandEvent = new api.GroupCommandEvent(event, i.name, result);
+                    let commandEvent = new Bot.GroupCommandEvent(event, i.name, result);
                     let executeReturn = await i.execute(commandEvent, ...result);
                     yield { command: i, result: executeReturn, event: commandEvent };
                     if (executeReturn) break;

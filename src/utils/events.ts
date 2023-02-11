@@ -68,17 +68,17 @@ export class GroupCommandEvent {
         this.member = event.member;
     }
 
-    async reply (content: Adapter.Sendable, quote?: boolean) {
-        return await this.rawEvent.reply(content, quote);
+    reply (content: Adapter.Sendable, quote?: boolean) {
+        return this.rawEvent.reply(content, quote);
     }
 
-    async replyAt (content: Adapter.Sendable, quote?: boolean) {
-        if (Array.isArray(content)) return await this.rawEvent.reply([MessageSegment.At(this.sender.userId), ...content], quote);
-        else return await this.rawEvent.reply([MessageSegment.At(this.sender.userId), content], quote);
+    replyAt (content: Adapter.Sendable, quote?: boolean) {
+        if (Array.isArray(content)) return this.rawEvent.reply([MessageSegment.At(this.sender.userId), ...content], quote);
+        else return this.rawEvent.reply([MessageSegment.At(this.sender.userId), content], quote);
     }
 
-    async reCall () {
-        return await this.rawEvent.recall();
+    reCall () {
+        return this.rawEvent.recall();
     }
 
 }

@@ -12,7 +12,7 @@ export function parseIdentifier (token: Bot.Token<"String" | "Identifier">) {
     else return "";
 }
 
-export const marketPath = path.join(Bot.botPath, "data/core/market.json");
+export const marketPath = path.join(Bot.botPath, "data/market.json");
 
 @Bot.Utils.onCommand(
     `${Bot.Command.commandPrefix.Normal}市场`,

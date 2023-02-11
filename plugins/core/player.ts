@@ -1,6 +1,6 @@
-import * as Bot from "swbot";
+import Bot from "swbot";
 
-import { Item, ItemStack, ItemStackInterface, NBT, signItems, UnknownItem, recipes, Recipe } from "./item";
+import { Item, ItemStack, ItemStackInterface, NBT, signItems, UnknownItem, recipes, Recipe, CoinItem } from "./item";
 
 import fs from "fs";
 import path from "path";
@@ -19,7 +19,7 @@ export class Player {
 
     public readonly id: number;
 
-    public static * loadAllConfigs () {
+    public static * loadAllConfigures () {
         fs.mkdirSync(playerPath, {recursive: true});
         for (let i of fs.readdirSync(playerPath)) {
             try {
@@ -314,7 +314,10 @@ export class Player {
     refreshHealth () {
         if (this.getMaxHealth() < this.getHealth()) this.setHealth(this.getMaxHealth());
         if (this.getMaxHealth() < 40) this.setMaxHealth(40);
-        if (this.getHealth() < 0) this.setHealth(this.getMaxHealth());
+        if (this.getHealth() <= 0) {
+            this.takeItem(CoinItem.id, Math.abs(Math.trunc(this.count(CoinItem.id, {}) * 0.1)), {});
+            this.setHealth(this.getMaxHealth());
+        }
     }
 
     /**
@@ -348,7 +351,7 @@ export const players: Player[] = [];
 Bot.Bot.client.on(
     "system.online",
     async () => {
-        for (let i of Player.loadAllConfigs()) {
+        for (let i of Player.loadAllConfigures()) {
             Bot.Bot.client.logger.mark(`加载玩家配置文件 ${i.configFilePath}`);
         }
     }
