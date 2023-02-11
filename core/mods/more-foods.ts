@@ -165,7 +165,7 @@ export class StrawBerryItem extends BotItem.Item {
 }
 
 @BotItem.Item.register()
-export class SugarItem extends BotItem.Item {
+export class FrenchBreadItem extends BotItem.Item {
 
     public static readonly id = Identifier("sugar");
 
@@ -192,7 +192,49 @@ export class SugarItem extends BotItem.Item {
 
 }
 
+@BotItem.Item.register()
+export class SugarItem extends BotItem.Item {
+
+    public static readonly id = Identifier("french_bread");
+
+    getName (): string { return "法棍"; }
+    getTooltip(): string { return "硬硬的，长长的。。。揍人很疼"; }
+
+    getName (stack?: BotItem.ItemStack, player?: BotItem.Player, event?: Bot.GroupCommandEvent, commandArgs?: Bot.ParseResult): string { return "法棍"; }
+    getTooltip (stack?: BotItem.ItemStack, player?: BotItem.Player, event?: Bot.GroupCommandEvent, commandArgs?: Bot.ParseResult): string { return "食用后增加125生命值"; }
+
+    onUse (stack: BotItem.ItemStack, player: BotItem.Player, event?: Bot.GroupCommandEvent, commandArgs?: Bot.ParseResult): boolean {
+        player.takeItem(this.getId(), 1, stack.stack.nbt);
+        player.setHealth(player.getHealth() + 125);
+        if (event && commandArgs) {
+            event.reply(`食用了 ${this.getName()}，你的生命值增加了 125 (当前 ${player.getHealth()})`).then();
+        }
+        return true;
+    }
+    
+    data = {
+        turntableItems: [
+            {
+                count: 1,
+                nbt: {}
+            }
+        ],
+        storeGoods: [
+            {
+                item: {
+                    count: 2,
+                    nbt: {}
+                },
+                price: 1000
+            }
+        ]
+    };
+
+}
+
 BotItem.addRecipe(
+    //法棍
+    { result: { count: 1, nbt: {}, id: FrenchBreadItem.id }, recipe: [ { count: 5, id: BreadItem.id } ] },
     // 面包
     { result: { count: 1, nbt: {}, id: BreadItem.id }, recipe: [ { count: 5, id: BreadSliceItem.id } ] },
     // 面包片
