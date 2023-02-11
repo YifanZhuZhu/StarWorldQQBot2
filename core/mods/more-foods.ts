@@ -165,7 +165,7 @@ export class StrawBerryItem extends BotItem.Item {
 }
 
 @BotItem.Item.register()
-export class FrenchBreadItem extends BotItem.Item {
+export class SugarItem extends BotItem.Item {
 
     public static readonly id = Identifier("sugar");
 
@@ -193,7 +193,7 @@ export class FrenchBreadItem extends BotItem.Item {
 }
 
 @BotItem.Item.register()
-export class SugarItem extends BotItem.Item {
+export class FrenchBreadItem extends BotItem.Item {
 
     public static readonly id = Identifier("french_bread");
 
