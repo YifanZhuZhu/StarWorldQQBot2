@@ -43,7 +43,14 @@ export class BreadItem extends BotItem.Item {
         return true;
     }
 
-    data = { turntableItems: [ { count: 1, nbt: {} } ] };
+    data = {
+        turntableItems: [
+            {
+                count: 1,
+                nbt: {}
+            }
+        ]
+    };
 
 }
 
@@ -64,7 +71,23 @@ export class CapsicumItem extends BotItem.Item {
         return true;
     }
 
-    data = {turntableItems: [{count: 1, nbt: {}}]};
+    data = {
+        turntableItems: [
+            {
+                count: 1,
+                nbt: {}
+            }
+        ],
+        storeGoods: [
+            {
+                item: {
+                    count: 1,
+                    nbt: {}
+                },
+                price: 20
+            }
+        ]
+    };
 
 }
 

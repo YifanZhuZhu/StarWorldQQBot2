@@ -7,7 +7,7 @@ import config from "../config";
 import _ from "lodash";
 
 
-export type Awaitable<T> = T | Promise<T>;
+export type Awaitable <T> = T | Promise<T>;
 
 export type CommandExecute =
     | ((event: Bot.GroupCommandEvent, ...args: ParseResult) => Awaitable<boolean>)
