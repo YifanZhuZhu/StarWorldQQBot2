@@ -26,9 +26,9 @@ BotCore.addRecipe(
     ].join("\n"),
     "猜数字小游戏"
 )
-export class SignCommand extends Bot.Utils.Command {
+export class GuessNumberCommand extends Bot.Utils.Command {
 
-    random = _.random(1, 100);
+    public random: number = _.random(1, 100);
 
     async handle (event: Bot.GroupCommandEvent, ...args: Bot.ParseResult) {
         if (args.length == 0 || args[0].type != "Token" || args[0].value.type != "Numeric") return false;
