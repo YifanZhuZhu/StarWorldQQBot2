@@ -164,6 +164,34 @@ export class StrawBerryItem extends BotItem.Item {
 
 }
 
+@BotItem.Item.register()
+export class SugarItem extends BotItem.Item {
+
+    public static readonly id = Identifier("sugar");
+
+    getName (): string { return "糖"; }
+    getTooltip(): string { return "甜"; }
+
+    data = {
+        storeGoods: [
+            {
+                item: {
+                    count: 5,
+                    nbt: {}
+                },
+                price: 1
+            }
+        ],
+        turntableItems: [
+            {
+                count: 25,
+                nbt: {}
+            }
+        ],
+    };
+
+}
+
 BotItem.addRecipe(
     // 面包
     { result: { count: 1, nbt: {}, id: BreadItem.id }, recipe: [ { count: 5, id: BreadSliceItem.id } ] },
